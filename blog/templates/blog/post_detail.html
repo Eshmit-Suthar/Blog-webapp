@@ -1,0 +1,38 @@
+{% extends 'blog/base.html' %}
+{% block content %}
+  <article>
+    <h1>{{ post.title }}</h1>
+    <p class="text-muted">By {{ post.author }} • {{ post.date_posted|date:"F d, Y" }}</p>
+    {% if post.image %}
+      <img src="{{ post.image.url }}" class="img-fluid mb-3" alt="">
+    {% endif %}
+    <div>{{ post.content|linebreaks }}</div>
+
+    {% if user == post.author %}
+      <a href="{% url 'post-update' post.slug %}" class="btn btn-sm btn-outline-primary mt-3">Edit</a>
+      <a href="{% url 'post-delete' post.slug %}" class="btn btn-sm btn-outline-danger mt-3">Delete</a>
+    {% endif %}
+  </article>
+
+  <section class="mt-4">
+    <h4>Comments</h4>
+    {% for c in comments %}
+      <div class="mb-2">
+        <strong>{{ c.author }}</strong> <small class="text-muted">on {{ c.date_created|date:"F d, Y H:i" }}</small>
+        <div>{{ c.body|linebreaks }}</div>
+      </div>
+    {% empty %}
+      <p>No comments yet.</p>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'add-comment' post.slug %}">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <button class="btn btn-primary">Add comment</button>
+      </form>
+    {% else %}
+      <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to comment.</p>
+    {% endif %}
+  </section>
+{% endblock %}
