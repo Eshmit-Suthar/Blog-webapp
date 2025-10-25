@@ -1,41 +1,27 @@
 {% extends 'blog/base.html' %}
-{% block title %}Home - My Blog{% endblock %}
+{% block title %}Home — My Blog{% endblock %}
+
 {% block content %}
-<h1>All Posts</h1>
+<h2 class="mb-4 text-center">Latest Posts</h2>
 
-{% for post in posts %}
-  <div class="card mb-3">
-    <div class="row g-0">
-      {% if post.image %}
-      <div class="col-md-3">
-        <img src="{{ post.image.url }}" class="img-fluid rounded-start" alt="">
-      </div>
-      <div class="col-md-9">
-      {% else %}
-      <div class="col-12">
-      {% endif %}
-        <div class="card-body">
-          <h5 class="card-title"><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h5>
-          <p class="card-text">{{ post.content|truncatechars:200 }}</p>
-          <p class="card-text"><small class="text-muted">By {{ post.author }} • {{ post.date_posted|date:"F d, Y" }} • {{ post.category }}</small></p>
+<div class="row">
+    {% for post in posts %}
+    <div class="col-md-6 mb-4">
+        <div class="card post-card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p class="card-text text-muted">
+                    {{ post.content|truncatewords:25 }}
+                </p>
+                <a href="{% url 'post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">Read More</a>
+            </div>
+            <div class="card-footer text-muted">
+                Posted by {{ post.author.username }} on {{ post.date_posted|date:"F j, Y" }}
+            </div>
         </div>
-      </div>
     </div>
-  </div>
-{% empty %}
-  <p>No posts yet.</p>
-{% endfor %}
-
-<nav>
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a></li>
-    {% endif %}
-    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-    {% if page_obj.has_next %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a></li>
-    {% endif %}
-  </ul>
-</nav>
-
+    {% empty %}
+    <p class="text-center">No posts yet 😢</p>
+    {% endfor %}
+</div>
 {% endblock %}
