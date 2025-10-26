@@ -4,8 +4,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Post
-from .forms import PostForm
+from django.contrib.auth.models import User
+
+from .models import Post, Comment, Profile  # add Comment and Profile
+from .forms import PostForm, CommentForm, UserRegisterForm, ProfileForm  # add these forms
+
 
 # 🏠 Home page — list all posts
 def home(request):
@@ -15,6 +18,10 @@ def home(request):
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     return render(request, 'blog/post_detail.html', {'post': post})
+def profile_view(request, username):
+    user = get_object_or_404(User, username=username)
+    profile, created = Profile.objects.get_or_create(user=user)
+    return render(request, 'blog/profile.html', {'profile': profile, 'user_obj': user})
 
 # ➕ Create new post
 @login_required

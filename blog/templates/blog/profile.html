@@ -1,0 +1,20 @@
+{% extends 'blog/base.html' %}
+{% block content %}
+<h2>{{ user_profile.username }}'s Profile</h2>
+
+<img src="{{ user_profile.profile.profile_pic.url }}" width="150" height="150">
+<p>{{ user_profile.profile.bio }}</p>
+
+{% if user_profile == request.user %}
+<a href="{% url 'edit_profile' %}">Edit Profile</a>
+{% endif %}
+
+<h3>{{ user_profile.username }}'s Posts:</h3>
+<ul>
+  {% for post in posts %}
+    <li><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></li>
+  {% empty %}
+    <p>No posts yet.</p>
+  {% endfor %}
+</ul>
+{% endblock %}
