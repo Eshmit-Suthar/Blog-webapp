@@ -90,6 +90,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=300, blank=True)
     profile_pic = models.ImageField(upload_to=upload_to_profile, default='default.jpg', blank=True)
+    location = models.CharField(max_length=100, blank=True)  # ✅ new field added
 
     def __str__(self):
         return f'{self.user.username} Profile'
@@ -103,5 +104,4 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
     else:
-        # Create if missing (for existing users)
-        Profile.objects.get_or_create(user=instance)
+        instance.profile.save()
