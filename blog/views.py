@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 from .models import Post, Comment, Profile
 from .forms import (
@@ -13,6 +14,7 @@ from .forms import (
     UserUpdateForm,
     ProfileUpdateForm,
 )
+
 
 # 🏠 Home page — list all posts
 def home(request):
@@ -102,3 +104,10 @@ def edit_profile(request):
 
     context = {'u_form': u_form, 'p_form': p_form}
     return render(request, 'blog/edit_profile.html', context)
+
+
+# 🚪 Custom Logout with Success Message
+def custom_logout(request):
+    logout(request)
+    messages.success(request, "✅ You have been logged out successfully!")
+    return redirect('home')
