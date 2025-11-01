@@ -15,25 +15,21 @@ from .forms import (
     ProfileUpdateForm,
 )
 
-
-# 🏠 Home page — list all posts
+# 🏠 Home page
 def home(request):
     posts = Post.objects.all().order_by('-date_posted')
     return render(request, 'blog/home.html', {'posts': posts})
 
-
-# 📝 Single post view
+# 📝 Single post
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     return render(request, 'blog/post_detail.html', {'post': post})
-
 
 # 👤 Profile view
 def profile_view(request, username):
     user = get_object_or_404(User, username=username)
     profile, created = Profile.objects.get_or_create(user=user)
     return render(request, 'blog/profile.html', {'profile': profile, 'user_obj': user})
-
 
 # ➕ Create new post
 @login_required
@@ -49,7 +45,6 @@ def post_new(request):
         form = PostForm()
     return render(request, 'blog/post_form.html', {'form': form})
 
-
 # ✏️ Edit post
 @login_required
 def post_edit(request, pk):
@@ -63,7 +58,6 @@ def post_edit(request, pk):
         form = PostForm(instance=post)
     return render(request, 'blog/post_form.html', {'form': form})
 
-
 # ❌ Delete post
 @login_required
 def post_delete(request, pk):
@@ -73,8 +67,7 @@ def post_delete(request, pk):
         return redirect('home')
     return render(request, 'blog/post_confirm_delete.html', {'post': post})
 
-
-# 👤 User registration
+# 👤 Register
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -86,8 +79,7 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'blog/register.html', {'form': form})
 
-
-# ⚙️ Edit Profile
+# ⚙️ Edit profile
 @login_required
 def edit_profile(request):
     if request.method == 'POST':
@@ -97,7 +89,7 @@ def edit_profile(request):
         if u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
-            return redirect('profile_view', username=request.user.username)  # redirect to profile
+            return redirect('profile', username=request.user.username)
     else:
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
@@ -105,9 +97,9 @@ def edit_profile(request):
     context = {'u_form': u_form, 'p_form': p_form}
     return render(request, 'blog/edit_profile.html', context)
 
-
-# 🚪 Custom Logout with Success Message
+# ✅ Custom Logout with success message
 def custom_logout(request):
+    username = request.user.username if request.user.is_authenticated else "User"
     logout(request)
-    messages.success(request, "✅ You have been logged out successfully!")
+    messages.success(request, f"👋 {username}, you have been logged out successfully! See you soon!")
     return redirect('home')
