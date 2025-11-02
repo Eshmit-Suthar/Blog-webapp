@@ -1,27 +1,87 @@
 {% extends 'blog/base.html' %}
-{% block title %}Register — My Blog{% endblock %}
+{% load widget_tweaks %}
+{% block title %}Create Account — My Blog{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white text-center">
-                <h4>Create an Account</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <div class="d-grid mt-3">
-                        <button type="submit" class="btn btn-primary">Register</button>
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="card shadow-lg border-0 rounded-4" style="max-width: 460px; width: 100%;">
+        <div class="card-header bg-gradient text-white text-center rounded-top-4" 
+             style="background: linear-gradient(135deg, #007bff, #00b4d8);">
+            <h3 class="fw-bold mb-0">Join My Blog</h3>
+            <p class="text-white-50 mb-0">Start sharing your stories today</p>
+        </div>
+
+        <div class="card-body p-4">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted border-end-0">
+                                <i class="bi bi-person-circle"></i>
+                            </span>
+                            {% render_field field class="form-control border-start-0 ps-2 form-control-lg rounded-end-3" placeholder=field.label %}
+                        </div>
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors|join:", " }}
+                            </div>
+                        {% endif %}
                     </div>
-                </form>
-                <p class="text-center mt-3">
-                    Already have an account?
-                    <a href="{% url 'login' %}">Login here</a>.
-                </p>
+                {% endfor %}
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg fw-semibold rounded-3 shadow-sm">
+                        <i class="bi bi-person-plus-fill me-1"></i> Create Account
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center mt-4">
+                <p class="mb-1 text-muted">Already have an account?</p>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm fw-semibold rounded-pill px-4">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Login here
+                </a>
             </div>
+        </div>
+
+        <div class="card-footer text-center text-muted small py-3 bg-light rounded-bottom-4">
+            <span>© {{ year|default:2025 }} My Blog • Built with ❤️ using Django</span>
         </div>
     </div>
 </div>
+
+<style>
+body {
+    font-family: "Inter", "Segoe UI", sans-serif;
+}
+.card {
+    animation: fadeInUp 0.6s ease;
+}
+@keyframes fadeInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+input.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #00b4d8);
+    border: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0069d9, #0096c7);
+}
+.bg-gradient {
+    background: linear-gradient(135deg, #007bff, #00b4d8);
+}
+</style>
 {% endblock %}
