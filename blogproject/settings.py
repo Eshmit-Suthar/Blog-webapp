@@ -75,7 +75,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ✅ Login/Logout redirect settings
 LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'
 
 # ✅ Message tags for Bootstrap colors
 MESSAGE_TAGS = {
