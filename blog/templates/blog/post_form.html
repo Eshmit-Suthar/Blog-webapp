@@ -1,9 +1,158 @@
 {% extends 'blog/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+  {% if form.instance.pk %}Edit Post{% else %}Create New Post{% endif %}
+{% endblock %}
+
 {% block content %}
-  <h2>{% if form.instance.pk %}Edit{% else %}New{% endif %} Post</h2>
-  <form method="post" enctype="multipart/form-data">
+<style>
+  body {
+    background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .post-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 40px;
+    width: 700px;
+    margin: 60px auto;
+    color: #FBE4D8;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  }
+
+  .post-card h2 {
+    color: #FBE4D8;
+    margin-bottom: 25px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  label {
+    color: #DFB6B2;
+    font-weight: 500;
+  }
+
+  .form-control {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #FBE4D8;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-control:focus {
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    box-shadow: 0 0 8px #854F6C;
+  }
+
+  .btn-submit {
+    background: #854F6C;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    color: #FBE4D8;
+    font-weight: 600;
+    width: 48%;
+    transition: 0.3s;
+  }
+
+  .btn-submit:hover {
+    background: #522B5B;
+    transform: scale(1.03);
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+
+  .preview-box {
+    display: none;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .preview-box h3 {
+    color: #DFB6B2;
+    margin-bottom: 10px;
+  }
+
+  .char-count {
+    font-size: 0.85rem;
+    color: #DFB6B2;
+    text-align: right;
+  }
+</style>
+
+<div class="post-card">
+  <h2>{% if form.instance.pk %}Edit Post ✏️{% else %}Create New Post ✍️{% endif %}</h2>
+
+  <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-success">Save</button>
+
+    <div class="mb-3">
+      <label for="id_title">Title</label>
+      {{ form.title|add_class:"form-control" }}
+      <div class="char-count" id="titleCount">0 / 200</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="id_tags">Tags</label>
+      {{ form.tags|add_class:"form-control" }}
+    </div>
+
+    <div class="mb-3">
+      <label for="id_content">Content</label>
+      {{ form.content|add_class:"form-control" }}
+    </div>
+
+    {% if form.image %}
+    <div class="mb-3">
+      <label for="id_image">Upload Image</label>
+      {{ form.image|add_class:"form-control" }}
+    </div>
+    {% endif %}
+
+    <div class="btn-row">
+      <button type="button" class="btn-submit" onclick="previewPost()">Preview</button>
+      <button type="submit" class="btn-submit">Publish</button>
+    </div>
   </form>
+
+  <div class="preview-box" id="previewBox">
+    <h3 id="previewTitle"></h3>
+    <div id="previewContent"></div>
+  </div>
+</div>
+
+<script>
+  const titleInput = document.getElementById('id_title');
+  const titleCount = document.getElementById('titleCount');
+
+  if (titleInput) {
+    titleInput.addEventListener('input', () => {
+      titleCount.textContent = `${titleInput.value.length} / 200`;
+    });
+  }
+
+  function previewPost() {
+    const previewBox = document.getElementById('previewBox');
+    const title = document.getElementById('id_title').value;
+    const contentIframe = document.querySelector('.django-ckeditor-widget iframe');
+    const content = contentIframe ? contentIframe.contentDocument.body.innerHTML : document.getElementById('id_content').value;
+
+    document.getElementById('previewTitle').innerHTML = title || 'Untitled Post';
+    document.getElementById('previewContent').innerHTML = content || 'No content yet.';
+    previewBox.style.display = 'block';
+    previewBox.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
 {% endblock %}

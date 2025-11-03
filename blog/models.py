@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.template.defaultfilters import slugify
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from ckeditor.fields import RichTextField  # ✅ Added CKEditor
 
 # ------------------------------
 # Category model
@@ -34,9 +35,10 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    content = models.TextField()
+    content = RichTextField()  # ✅ Replaced TextField with CKEditor RichTextField
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     image = models.ImageField(upload_to=upload_to_post, null=True, blank=True)
+    tags = models.CharField(max_length=200, blank=True, null=True)  # ✅ Added tags
     date_posted = models.DateTimeField(default=timezone.now)
     published = models.BooleanField(default=True)
 
@@ -47,7 +49,7 @@ class Post(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Auto-generate slug if not set
+        # ✅ Auto-generate slug if not set
         if not self.slug:
             base = slugify(self.title)[:200]
             slug_candidate = base
@@ -90,7 +92,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=300, blank=True)
     profile_pic = models.ImageField(upload_to=upload_to_profile, default='default.jpg', blank=True)
-    location = models.CharField(max_length=100, blank=True)  # ✅ new field added
+    location = models.CharField(max_length=100, blank=True)  # ✅ Location field
 
     def __str__(self):
         return f'{self.user.username} Profile'
