@@ -1,106 +1,177 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth import login
 from django.contrib import messages
+from django.contrib.auth.models import User
+from .models import Post, Comment, Category, Profile
+from .forms import PostForm, CommentForm, ProfileForm
 
-from .models import Post, Comment, Profile
-from .forms import (
-    PostForm,
-    CommentForm,
-    UserRegisterForm,
-    ProfileForm,
-    UserUpdateForm,
-    ProfileUpdateForm,
-)
 
-# 🏠 Home page
+# ------------------------------
+# Home / Post List
+# ------------------------------
 def home(request):
-    posts = Post.objects.all().order_by('-date_posted')
-    return render(request, 'blog/home.html', {'posts': posts})
+    posts = Post.objects.filter(published=True).order_by('-date_posted')
+    categories = Category.objects.all()
+    return render(request, 'blog/home.html', {'posts': posts, 'categories': categories})
 
-# 📝 Single post
-def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    return render(request, 'blog/post_detail.html', {'post': post})
 
-# 👤 Profile view
-def profile_view(request, username):
-    user = get_object_or_404(User, username=username)
-    profile, created = Profile.objects.get_or_create(user=user)
-    return render(request, 'blog/profile.html', {'profile': profile, 'user_obj': user})
+# ------------------------------
+# Post Detail View
+# ------------------------------
+def post_detail(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    comments = post.comments.filter(active=True)
+    new_comment = None
 
-# ➕ Create new post
+    if request.method == 'POST':
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            new_comment = comment_form.save(commit=False)
+            new_comment.post = post
+            new_comment.author = request.user if request.user.is_authenticated else None
+            new_comment.save()
+            messages.success(request, "Your comment has been added!")
+            return redirect('post-detail', slug=slug)
+    else:
+        comment_form = CommentForm()
+
+    return render(request, 'blog/post_detail.html', {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form
+    })
+
+
+# ------------------------------
+# Create a New Post
+# ------------------------------
 @login_required
-def post_new(request):
-    if request.method == "POST":
+def post_create(request):
+    if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('post_detail', pk=post.pk)
+            messages.success(request, "Your post has been created successfully!")
+            return redirect('post-detail', slug=post.slug)
     else:
         form = PostForm()
     return render(request, 'blog/post_form.html', {'form': form})
 
-# ✏️ Edit post
+
+# ------------------------------
+# Edit Post (for pk-based URLs)
+# ------------------------------
 @login_required
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    if request.method == "POST":
+
+    if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             form.save()
-            return redirect('post_detail', pk=post.pk)
+            messages.success(request, "Post edited successfully!")
+            return redirect('post-detail', slug=post.slug)
+    else:
+        form = PostForm(instance=post)
+
+    return render(request, 'blog/post_form.html', {'form': form})
+
+
+# ------------------------------
+# Update Post (for slug-based URLs)
+# ------------------------------
+@login_required
+def post_update(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    if post.author != request.user:
+        messages.error(request, "You are not authorized to edit this post.")
+        return redirect('post-detail', slug=slug)
+
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Post updated successfully!")
+            return redirect('post-detail', slug=post.slug)
     else:
         form = PostForm(instance=post)
     return render(request, 'blog/post_form.html', {'form': form})
 
-# ❌ Delete post
-@login_required
-def post_delete(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    if request.method == "POST":
-        post.delete()
-        return redirect('home')
-    return render(request, 'blog/post_confirm_delete.html', {'post': post})
 
-# 👤 Register
+# ------------------------------
+# Delete Post
+# ------------------------------
+@login_required
+def post_delete(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    if post.author != request.user:
+        messages.error(request, "You are not authorized to delete this post.")
+        return redirect('post-detail', slug=slug)
+    post.delete()
+    messages.success(request, "Post deleted successfully!")
+    return redirect('home')
+
+
+# ------------------------------
+# Filter Posts by Category
+# ------------------------------
+def posts_by_category(request, slug):
+    category = get_object_or_404(Category, slug=slug)
+    posts = Post.objects.filter(category=category, published=True)
+    return render(request, 'blog/category_posts.html', {'category': category, 'posts': posts})
+
+
+# ------------------------------
+# User Registration
+# ------------------------------
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}! You can now log in.')
-            return redirect('login')
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful! You are now logged in.")
+            return redirect('home')
     else:
         form = UserCreationForm()
     return render(request, 'blog/register.html', {'form': form})
 
-# ⚙️ Edit profile
+
+# ------------------------------
+# Profile View
+# ------------------------------
+@login_required
+def profile(request, username):
+    user = get_object_or_404(User, username=username)
+    profile = Profile.objects.get(user=user)
+    posts = Post.objects.filter(author=user)
+    return render(request, 'blog/profile.html', {'profile': profile, 'posts': posts})
+
+
+# ------------------------------
+# Edit Profile
+# ------------------------------
 @login_required
 def edit_profile(request):
+    profile = Profile.objects.get(user=request.user)
     if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-
-        if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
-            p_form.save()
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully!")
             return redirect('profile', username=request.user.username)
     else:
-        u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileUpdateForm(instance=request.user.profile)
+        form = ProfileForm(instance=profile)
+    return render(request, 'blog/edit_profile.html', {'form': form})
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+from django.contrib import messages
 
-    context = {'u_form': u_form, 'p_form': p_form}
-    return render(request, 'blog/edit_profile.html', context)
-
-# ✅ Custom Logout with success message
 def custom_logout(request):
-    username = request.user.username if request.user.is_authenticated else "User"
     logout(request)
-    messages.success(request, f"👋 {username}, you have been logged out successfully! See you soon!")
+    messages.success(request, "You have been logged out successfully.")
     return redirect('home')
