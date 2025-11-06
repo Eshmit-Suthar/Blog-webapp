@@ -1,6 +1,7 @@
 from django import forms
-from .models import Post, Comment, Profile
+from django.contrib.auth.models import User
 from ckeditor.widgets import CKEditorWidget
+from .models import Post, Comment, Profile
 
 
 # ----------------------------
@@ -71,4 +72,30 @@ class ProfileForm(forms.ModelForm):
             'profile_pic': forms.ClearableFileInput(attrs={
                 'class': 'form-control'
             }),
+        }
+
+
+# ----------------------------
+# User & Profile Update Forms
+# ----------------------------
+class UserUpdateForm(forms.ModelForm):
+    """Form for updating basic User info"""
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+        }
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    """Form for updating profile details"""
+    class Meta:
+        model = Profile
+        fields = ['bio', 'profile_pic']
+        widgets = {
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Write something about yourself...'}),
+            'profile_pic': forms.FileInput(attrs={'class': 'form-control'}),
         }
