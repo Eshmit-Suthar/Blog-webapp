@@ -5,7 +5,8 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Post, Comment, Category, Profile
-from .forms import PostForm, CommentForm, ProfileForm
+from .forms import PostForm, CommentForm, ProfileUpdateForm, UserUpdateForm
+
 
 
 # ------------------------------
@@ -157,21 +158,31 @@ def profile(request, username):
 # ------------------------------
 @login_required
 def edit_profile(request):
+    # Get the current user's profile
     profile = Profile.objects.get(user=request.user)
+    
     if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Profile updated successfully!")
+        # Create two forms: one for User, one for Profile
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+        
+        # Check if both forms are valid
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, "Your profile has been updated successfully!")
             return redirect('profile', username=request.user.username)
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
-        form = ProfileForm(instance=profile)
-    return render(request, 'blog/edit_profile.html', {'form': form})
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-from django.contrib import messages
+        # GET request: pre-fill the forms with current data
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=profile)
+    
+    # Pass both forms to the template
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+    return render(request, 'blog/edit_profile.html', context)
 
-def custom_logout(request):
-    logout(request)
-    messages.success(request, "You have been logged out successfully.")
-    return redirect('home')

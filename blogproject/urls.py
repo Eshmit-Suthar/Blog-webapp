@@ -1,16 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
-from blog import views  # ✅ import custom views from your blog app
-from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Main blog app
     path('', include('blog.urls')),
-
-    # Built-in Django auth system (login, password reset, etc.)
-    path('accounts/', include('django.contrib.auth.urls')),
-
-    # Custom logout with success message
-    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

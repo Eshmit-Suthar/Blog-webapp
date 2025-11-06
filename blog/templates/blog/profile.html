@@ -1,150 +1,277 @@
 {% extends 'blog/base.html' %}
 {% load static %}
+
+{% block title %}Profile - {{ user.username }}{% endblock %}
+
 {% block content %}
-
 <style>
-    body {
-        background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
-        color: #FBE4D8;
-    }
+  body {
+    background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+    font-family: 'Poppins', sans-serif;
+  }
 
+  .profile-container {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+  }
+
+  .profile-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 30px;
+    color: #FBE4D8;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    text-align: center;
+    height: fit-content;
+  }
+
+  .profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #DFB6B2;
+    margin: 0 auto 20px;
+    display: block;
+  }
+
+  .profile-picture-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(223, 182, 178, 0.2);
+    border: 4px solid #DFB6B2;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+  }
+
+  .profile-name {
+    color: #FBE4D8;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .profile-username {
+    color: #DFB6B2;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+  }
+
+  .profile-bio {
+    color: rgba(251, 228, 216, 0.8);
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 20px 0;
+    border-top: 1px solid rgba(223, 182, 178, 0.2);
+    border-bottom: 1px solid rgba(223, 182, 178, 0.2);
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    color: #DFB6B2;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .stat-label {
+    color: rgba(251, 228, 216, 0.6);
+    font-size: 0.85rem;
+  }
+
+  .profile-email {
+    color: rgba(251, 228, 216, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  .btn-edit {
+    background: #854F6C;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    color: #FBE4D8;
+    font-weight: 600;
+    width: 100%;
+    transition: 0.3s;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  .btn-edit:hover {
+    background: #522B5B;
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(132, 79, 108, 0.4);
+  }
+
+  .posts-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 30px;
+    color: #FBE4D8;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  }
+
+  .posts-title {
+    color: #FBE4D8;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+  }
+
+  .post-item {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(223, 182, 178, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .post-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #DFB6B2;
+    transform: translateX(5px);
+  }
+
+  .post-title {
+    color: #FBE4D8;
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 1rem;
+  }
+
+  .post-meta {
+    color: rgba(251, 228, 216, 0.6);
+    font-size: 0.85rem;
+  }
+
+  .post-badge {
+    background: #854F6C;
+    color: #FBE4D8;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    display: inline-block;
+    margin-left: 8px;
+  }
+
+  .post-image {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .no-posts {
+    text-align: center;
+    padding: 40px 20px;
+    color: #DFB6B2;
+  }
+
+  @media (max-width: 768px) {
     .profile-container {
-        max-width: 900px;
-        margin: 60px auto;
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      grid-template-columns: 1fr;
     }
 
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 30px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        padding-bottom: 20px;
+    .profile-card {
+      height: auto;
     }
-
-    .profile-header img {
-        width: 130px;
-        height: 130px;
-        border-radius: 50%;
-        border: 3px solid #DFB6B2;
-        object-fit: cover;
-    }
-
-    .profile-info h2 {
-        color: #FBE4D8;
-        margin: 0;
-        font-size: 1.8rem;
-    }
-
-    .profile-info p {
-        color: #DFB6B2;
-        margin: 5px 0;
-        font-size: 1rem;
-    }
-
-    .profile-actions {
-        margin-top: 15px;
-    }
-
-    .profile-actions a {
-        text-decoration: none;
-        color: #FBE4D8;
-        background: #854F6C;
-        padding: 10px 18px;
-        border-radius: 8px;
-        transition: 0.3s;
-        margin-right: 10px;
-    }
-
-    .profile-actions a:hover {
-        background: #522B5B;
-        transform: scale(1.05);
-    }
-
-    .posts-section {
-        margin-top: 40px;
-    }
-
-    .posts-section h3 {
-        color: #DFB6B2;
-        margin-bottom: 20px;
-    }
-
-    .posts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-
-    .post-card {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        transition: 0.3s;
-    }
-
-    .post-card:hover {
-        transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    .post-card a {
-        color: #FBE4D8;
-        font-weight: 600;
-        text-decoration: none;
-        font-size: 1.1rem;
-    }
-
-    .post-card a:hover {
-        color: #DFB6B2;
-    }
-
-    .empty-post {
-        color: #aaa;
-        text-align: center;
-        margin-top: 20px;
-    }
+  }
 </style>
 
 <div class="profile-container">
-    <div class="profile-header">
-        <img src="{{ user_profile.profile.profile_pic.url }}" alt="Profile Picture">
-        <div class="profile-info">
-            <h2>{{ user_profile.username }}</h2>
-            <p><strong>Email:</strong> {{ user_profile.email }}</p>
-            <p><strong>Bio:</strong> {{ user_profile.profile.bio|default:"No bio yet." }}</p>
-            <p><strong>Joined:</strong> {{ user_profile.date_joined|date:"F j, Y" }}</p>
+  <!-- Profile Card -->
+  <div class="profile-card">
+    {% if profile.image %}
+      <img src="{{ profile.image.url }}" alt="{{ user.username }}" class="profile-picture">
+    {% else %}
+      <div class="profile-picture-placeholder">👤</div>
+    {% endif %}
 
-            {% if user_profile == request.user %}
-            <div class="profile-actions">
-                <a href="{% url 'edit_profile' %}">Edit Profile</a>
-                <a href="{% url 'post_create' %}">Create New Post</a>
-            </div>
-            {% endif %}
-        </div>
+    <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+    <div class="profile-username">@{{ user.username }}</div>
+
+    {% if profile.bio %}
+      <div class="profile-bio">{{ profile.bio }}</div>
+    {% else %}
+      <div class="profile-bio"><em>No bio yet.</em></div>
+    {% endif %}
+
+    <div class="profile-stats">
+      <div class="stat-item">
+        <div class="stat-number">{{ posts.count }}</div>
+        <div class="stat-label">Posts</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ user.date_joined|date:"M Y" }}</div>
+        <div class="stat-label">Joined</div>
+      </div>
     </div>
 
-    <div class="posts-section">
-        <h3>{{ user_profile.username }}'s Blog Posts</h3>
-        {% if posts %}
-        <div class="posts-grid">
-            {% for post in posts %}
-            <div class="post-card">
-                <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
-                <p style="font-size: 0.9rem; color: #cbb;">{{ post.created_at|date:"M d, Y" }}</p>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="empty-post">No posts yet.</p>
-        {% endif %}
+    <div class="profile-email">
+      <i class="bi bi-envelope"></i> {{ user.email|default:"Not provided" }}
     </div>
+
+    {% if request.user == user %}
+      <a href="{% url 'edit_profile' %}" class="btn-edit">✏️ Edit Profile</a>
+    {% endif %}
+  </div>
+
+  <!-- Posts Card -->
+  <div class="posts-card">
+    <div class="posts-title">📝 Recent Posts</div>
+
+    {% if posts %}
+      {% for post in posts %}
+        <a href="{% url 'post-detail' post.slug %}" class="post-item">
+          <div>
+            <div class="post-title">{{ post.title }}</div>
+            <div class="post-meta">
+              📅 {{ post.date_posted|date:"M d, Y" }}
+              {% if post.category %}
+                <span class="post-badge">{{ post.category.name }}</span>
+              {% endif %}
+            </div>
+          </div>
+          {% if post.image %}
+            <img src="{{ post.image.url }}" alt="{{ post.title }}" class="post-image">
+          {% endif %}
+        </a>
+      {% endfor %}
+    {% else %}
+      <div class="no-posts">
+        <div style="font-size: 2rem; margin-bottom: 10px;">📭</div>
+        <p>No posts yet. Start creating! ✍️</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
 {% endblock %}

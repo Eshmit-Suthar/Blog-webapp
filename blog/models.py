@@ -7,6 +7,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from ckeditor.fields import RichTextField  # ✅ Added CKEditor
 
+
+
+
 # ------------------------------
 # Category model
 # ------------------------------
@@ -87,15 +90,19 @@ class Comment(models.Model):
 def upload_to_profile(instance, filename):
     return f'profile_pics/{instance.user.username}/{filename}'
 
-
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=300, blank=True)
-    profile_pic = models.ImageField(upload_to=upload_to_profile, default='default.jpg', blank=True)
-    location = models.CharField(max_length=100, blank=True)  # ✅ Location field
+    bio = models.TextField(blank=True)
+    image = models.ImageField(default='default.jpg', upload_to=upload_to_profile)
 
     def __str__(self):
         return f'{self.user.username} Profile'
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+    instance.profile.save()
 
 
 # ------------------------------
