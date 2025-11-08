@@ -13,7 +13,8 @@ urlpatterns = [
     
     # POST DETAIL (generic pattern LAST)
     path('post/<slug:slug>/', views.post_detail, name='post-detail'),
-   path('post/<int:pk>/delete/', views.post_delete, name='post_delete'),
+  path('post/<slug:slug>/delete/', views.post_delete, name='post_delete'),
+
 
 
     # PROFILE URLS (specific FIRST)

@@ -13,7 +13,7 @@
     {% if post.author == user %}
     <div class="card-footer">
         <a href="{% url 'post_edit' post.pk %}" class="btn btn-warning btn-sm">✏️ Edit</a>
-        <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm">🗑 Delete</a>
+        <a href="{% url 'post_delete' post.slug %}" class="btn btn-danger btn-sm">🗑 Delete</a>
     </div>
     {% endif %}
 </div>

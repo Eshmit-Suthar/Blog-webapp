@@ -112,9 +112,14 @@ def post_delete(request, slug):
     if post.author != request.user:
         messages.error(request, "You are not authorized to delete this post.")
         return redirect('post-detail', slug=slug)
-    post.delete()
-    messages.success(request, "Post deleted successfully!")
-    return redirect('home')
+
+    if request.method == 'POST':
+        post.delete()
+        messages.success(request, "Post deleted successfully!")
+        return redirect('home')
+
+    return render(request, 'blog/post_confirm_delete.html', {'object': post})
+
 
 
 # ------------------------------
