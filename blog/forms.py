@@ -1,18 +1,19 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Post, Comment, Profile
 from ckeditor.widgets import CKEditorWidget
+from .models import Post, Comment, Profile
+
 
 # ----------------------------
 # Post Creation Form
 # ----------------------------
-
 class PostForm(forms.ModelForm):
     content = forms.CharField(widget=CKEditorWidget(), label="Post Content")
 
     class Meta:
         model = Post
         fields = ['title', 'content', 'tags', 'category', 'image', 'published']
+
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -34,10 +35,10 @@ class PostForm(forms.ModelForm):
             }),
         }
 
+
 # ----------------------------
 # Comment Form
 # ----------------------------
-
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
@@ -50,53 +51,51 @@ class CommentForm(forms.ModelForm):
             }),
         }
 
-# ----------------------------
-# User Update Form (CORRECTED)
-# ----------------------------
-
-class UserUpdateForm(forms.ModelForm):
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter your email'
-        })
-    )
-
-    class Meta:
-        model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
-        widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Username',
-                'readonly': 'readonly'
-            }),
-            'first_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'First Name'
-            }),
-            'last_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Last Name'
-            }),
-        }
 
 # ----------------------------
-# Profile Update Form
+# Profile Edit Form
 # ----------------------------
-
-class ProfileUpdateForm(forms.ModelForm):
+class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'image']
+        fields = ['bio', 'profile_pic', 'location']
         widgets = {
             'bio': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Tell us about yourself...',
-                'rows': 4,
-                'maxlength': 500
+                'placeholder': 'Write something about yourself...',
+                'rows': 3
             }),
-            'image': forms.ClearableFileInput(attrs={
-                'class': 'form-control-file'
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Your location'
             }),
+            'profile_pic': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+
+
+# ----------------------------
+# User & Profile Update Forms
+# ----------------------------
+class UserUpdateForm(forms.ModelForm):
+    """Form for updating basic User info"""
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+        }
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    """Form for updating profile details"""
+    class Meta:
+        model = Profile
+        fields = ['bio', 'profile_pic']
+        widgets = {
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Write something about yourself...'}),
+            'profile_pic': forms.FileInput(attrs={'class': 'form-control'}),
         }
