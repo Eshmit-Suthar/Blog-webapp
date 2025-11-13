@@ -1,0 +1,29 @@
+{% extends 'blog/base.html' %}
+{% block title %}Search Profiles{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Search Profiles</h3>
+  <form method="get" action="{% url 'search_profiles' %}" class="mb-3">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by username..." class="form-control" style="max-width:400px;display:inline-block;">
+    <button class="btn btn-primary">Search</button>
+  </form>
+
+  {% if results %}
+    <ul class="list-group" style="max-width:600px;">
+      {% for user in results %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="{% url 'profile' user.username %}">{{ user.username }}</a>
+          {% if request.user.is_authenticated and request.user.username != user.username %}
+            <form method="post" action="{% url 'toggle_follow' user.username %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-primary">Follow / Unfollow</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No users found.</p>
+  {% endif %}
+</div>
+{% endblock %}

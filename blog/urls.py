@@ -9,4 +9,7 @@ urlpatterns = [
     path('post/<int:pk>/delete/', views.post_delete, name='post_delete'),
     path('register/', views.register, name='register'),
     path('profile/<str:username>/', views.profile_view, name='profile'),
+    path('search/', views.search_profiles, name='search_profiles'),
+  path('inbox/', views.inbox, name='inbox'),
+path('chat/<str:username>/', views.chat_view, name='chat'),
 ]

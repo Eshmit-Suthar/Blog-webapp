@@ -1,11 +1,11 @@
 from django import forms
 from django.contrib.auth.models import User
 from ckeditor.widgets import CKEditorWidget
-from .models import Post, Comment, Profile
+from .models import Post, Comment, Profile, Message
 
 
 # ----------------------------
-# Post Creation Form
+# 📝 Post Creation / Edit Form
 # ----------------------------
 class PostForm(forms.ModelForm):
     content = forms.CharField(widget=CKEditorWidget(), label="Post Content")
@@ -13,7 +13,6 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title', 'content', 'tags', 'category', 'image', 'published']
-
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -24,20 +23,14 @@ class PostForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Add comma-separated tags'
             }),
-            'category': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'image': forms.ClearableFileInput(attrs={
-                'class': 'form-control'
-            }),
-            'published': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'published': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 
 # ----------------------------
-# Comment Form
+# 💬 Comment Form
 # ----------------------------
 class CommentForm(forms.ModelForm):
     class Meta:
@@ -53,30 +46,24 @@ class CommentForm(forms.ModelForm):
 
 
 # ----------------------------
-# Profile Edit Form
+# 👤 Profile Edit Form
 # ----------------------------
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'profile_pic', 'location']
+        fields = ['bio', 'image']
         widgets = {
             'bio': forms.Textarea(attrs={
                 'class': 'form-control',
                 'placeholder': 'Write something about yourself...',
                 'rows': 3
             }),
-            'location': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Your location'
-            }),
-            'profile_pic': forms.ClearableFileInput(attrs={
-                'class': 'form-control'
-            }),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
 
 # ----------------------------
-# User & Profile Update Forms
+# ⚙️ User & Profile Update Forms
 # ----------------------------
 class UserUpdateForm(forms.ModelForm):
     """Form for updating basic User info"""
@@ -94,8 +81,25 @@ class ProfileUpdateForm(forms.ModelForm):
     """Form for updating profile details"""
     class Meta:
         model = Profile
-        fields = ['bio', 'profile_pic']
+        fields = ['bio', 'image']
         widgets = {
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Write something about yourself...'}),
-            'profile_pic': forms.FileInput(attrs={'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
+
+
+# ----------------------------
+# 💌 Messaging Form
+# ----------------------------
+class MessageForm(forms.ModelForm):
+    content = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Type your message...'
+        }),
+        label=''
+    )
+
+    class Meta:
+        model = Message
+        fields = ['content']

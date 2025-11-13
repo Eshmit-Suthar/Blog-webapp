@@ -1,0 +1,77 @@
+{% extends 'blog/base.html' %}
+{% block title %}Inbox — My Blog{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+    font-family: 'Poppins', sans-serif;
+    color: #FBE4D8;
+    margin: 0;
+    min-height: 100vh;
+  }
+  .inbox-container {
+    width: 90%;
+    max-width: 700px;
+    margin: 50px auto;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  }
+  .user-list {
+    margin-top: 20px;
+  }
+  .user-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    color: #FBE4D8;
+    text-decoration: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: 0.3s;
+  }
+  .user-list a:hover {
+    background: #DFB6B2;
+    color: #2B124C;
+    transform: scale(1.02);
+  }
+  .msg-preview {
+    font-size: 0.8rem;
+    color: #DFB6B2;
+  }
+</style>
+
+<div class="inbox-container">
+  <h3>📥 Inbox</h3>
+  <div class="user-list">
+    {% for conv in conversations %}
+      {% if conv.sender == request.user %}
+        {% with partner=conv.receiver %}
+          <a href="{% url 'chat' partner.username %}">
+            <div>
+              <strong>@{{ partner.username }}</strong><br>
+              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
+            </div>
+            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
+          </a>
+        {% endwith %}
+      {% else %}
+        {% with partner=conv.sender %}
+          <a href="{% url 'chat' partner.username %}">
+            <div>
+              <strong>@{{ partner.username }}</strong><br>
+              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
+            </div>
+            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
+          </a>
+        {% endwith %}
+      {% endif %}
+    {% empty %}
+      <p>No messages yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@
 {% load widget_tweaks %}
 
 {% block title %}
-  {% if form.instance.pk %}Edit Post{% else %}Create New Post{% endif %}
+  {% if form.instance.pk %}Edit Post{% else %}Create Post{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -16,24 +16,25 @@
   .post-card {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 40px;
-    width: 700px;
+    width: 720px;
     margin: 60px auto;
     color: #FBE4D8;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
   }
 
   .post-card h2 {
-    color: #FBE4D8;
-    margin-bottom: 25px;
-    font-weight: 600;
     text-align: center;
+    font-weight: 600;
+    color: #DFB6B2;
+    margin-bottom: 25px;
   }
 
   label {
     color: #DFB6B2;
     font-weight: 500;
+    margin-bottom: 5px;
   }
 
   .form-control {
@@ -50,34 +51,42 @@
     box-shadow: 0 0 8px #854F6C;
   }
 
-  .btn-submit {
-    background: #854F6C;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    color: #FBE4D8;
-    font-weight: 600;
-    width: 48%;
-    transition: 0.3s;
-  }
-
-  .btn-submit:hover {
-    background: #522B5B;
-    transform: scale(1.03);
-  }
-
   .btn-row {
     display: flex;
     justify-content: space-between;
-    margin-top: 20px;
+    gap: 10px;
+    margin-top: 25px;
+  }
+
+  .btn-submit {
+    flex: 1;
+    background: #DFB6B2;
+    border: none;
+    color: #2B124C;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 12px;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-submit i {
+    margin-right: 8px;
+  }
+
+  .btn-submit:hover {
+    background: #FBE4D8;
+    transform: translateY(-2px);
   }
 
   .preview-box {
     display: none;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    padding: 20px;
-    margin-top: 20px;
+    padding: 25px;
+    margin-top: 30px;
   }
 
   .preview-box h3 {
@@ -93,37 +102,47 @@
 </style>
 
 <div class="post-card">
-  <h2>{% if form.instance.pk %}Edit Post ✏️{% else %}Create New Post ✍️{% endif %}</h2>
+  <h2>
+    {% if form.instance.pk %}
+      <i class="fa-solid fa-pen-to-square"></i> Edit Post
+    {% else %}
+      <i class="fa-solid fa-feather-pointed"></i> Create New Post
+    {% endif %}
+  </h2>
 
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="mb-3">
-      <label for="id_title">Title</label>
+      <label for="id_title"><i class="fa-solid fa-heading"></i> Title</label>
       {{ form.title|add_class:"form-control" }}
       <div class="char-count" id="titleCount">0 / 200</div>
     </div>
 
     <div class="mb-3">
-      <label for="id_tags">Tags</label>
+      <label for="id_tags"><i class="fa-solid fa-tags"></i> Tags</label>
       {{ form.tags|add_class:"form-control" }}
     </div>
 
     <div class="mb-3">
-      <label for="id_content">Content</label>
+      <label for="id_content"><i class="fa-solid fa-align-left"></i> Content</label>
       {{ form.content|add_class:"form-control" }}
     </div>
 
     {% if form.image %}
     <div class="mb-3">
-      <label for="id_image">Upload Image</label>
+      <label for="id_image"><i class="fa-solid fa-image"></i> Upload Image</label>
       {{ form.image|add_class:"form-control" }}
     </div>
     {% endif %}
 
     <div class="btn-row">
-      <button type="button" class="btn-submit" onclick="previewPost()">Preview</button>
-      <button type="submit" class="btn-submit">Publish</button>
+      <button type="button" class="btn-submit" onclick="previewPost()">
+        <i class="fa-solid fa-eye"></i> Preview
+      </button>
+      <button type="submit" class="btn-submit">
+        <i class="fa-solid fa-paper-plane"></i> Publish
+      </button>
     </div>
   </form>
 
@@ -147,10 +166,12 @@
     const previewBox = document.getElementById('previewBox');
     const title = document.getElementById('id_title').value;
     const contentIframe = document.querySelector('.django-ckeditor-widget iframe');
-    const content = contentIframe ? contentIframe.contentDocument.body.innerHTML : document.getElementById('id_content').value;
+    const content = contentIframe
+      ? contentIframe.contentDocument.body.innerHTML
+      : document.getElementById('id_content').value;
 
     document.getElementById('previewTitle').innerHTML = title || 'Untitled Post';
-    document.getElementById('previewContent').innerHTML = content || 'No content yet.';
+    document.getElementById('previewContent').innerHTML = content || '<em>No content yet.</em>';
     previewBox.style.display = 'block';
     previewBox.scrollIntoView({ behavior: 'smooth' });
   }
