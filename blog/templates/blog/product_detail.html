@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ post.title }}</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        a { text-decoration: none; color: blue; }
+    </style>
+</head>
+<body>
+    <a href="/">← Back to Home</a>
+    <h1>{{ post.title }}</h1>
+    <p><strong>By {{ post.author }}</strong></p>
+    <p>{{ post.content }}</p>
+    <p><em>Published on {{ post.date_created }}</em></p>
+</body>
+</html>

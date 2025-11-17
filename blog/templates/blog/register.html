@@ -1,0 +1,70 @@
+{% extends 'blog/base.html' %}
+{% block title %}Register — My Blog{% endblock %}
+{% block content %}
+<style>
+.register-wrapper { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 140px); }
+.register-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 40px 35px;
+  width: 420px;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  color: #FBE4D8;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  margin-bottom: 18px;
+  padding: 0 12px;
+}
+.form-control {
+  flex: 1;
+  height: 45px;
+  background: transparent;
+  border: none;
+  color: #FBE4D8;
+  padding-left: 5px;
+}
+.btn-register {
+  width: 100%;
+  background: #854F6C;
+  border: none;
+  padding: 12px;
+  color: #FBE4D8;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+.btn-register:hover {
+  background: #DFB6B2;
+  color: #2B124C;
+  transform: scale(1.02);
+}
+a { color: #DFB6B2; text-decoration: none; }
+a:hover { text-decoration: underline; }
+</style>
+
+<div class="register-wrapper">
+  <div class="register-card">
+    <h3>Create Account</h3>
+    <form method="POST">
+      {% csrf_token %}
+      {{ form.username.errors }}
+      <div class="input-group"><i data-feather="user"></i>{{ form.username }}</div>
+      {{ form.password1.errors }}
+      <div class="input-group"><i data-feather="lock"></i>{{ form.password1 }}</div>
+      {{ form.password2.errors }}
+      <div class="input-group"><i data-feather="lock"></i>{{ form.password2 }}</div>
+      <button type="submit" class="btn-register">Sign Up</button>
+    </form>
+    <p class="extra-links mt-3">Already have an account? <a href="{% url 'login' %}">Login</a></p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/feather-icons"></script>
+<script>feather.replace();</script>
+{% endblock %}

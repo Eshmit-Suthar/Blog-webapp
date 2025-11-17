@@ -1,0 +1,83 @@
+{% extends 'blog/base.html' %}
+{% block title %}Inbox — My Blog{% endblock %}
+{% block content %}
+
+<style>
+body {
+  background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+  font-family: 'Poppins', sans-serif;
+  color: #FBE4D8;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.inbox-container {
+  max-width: 600px;
+  margin: 60px auto;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 25px 35px;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.inbox-container h3 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #DFB6B2;
+  font-weight: 600;
+}
+
+.user-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 12px 18px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  color: #FBE4D8;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.user-list a:hover {
+  background: #DFB6B2;
+  color: #2B124C;
+  transform: scale(1.02);
+}
+
+.msg-preview {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #DFB6B2;
+}
+</style>
+
+<div class="inbox-container">
+  <h3>📥 Inbox</h3>
+  <div class="user-list">
+    {% for conv in conversations %}
+      {% if conv.sender == request.user %}
+        {% with partner=conv.receiver %}
+      {% else %}
+        {% with partner=conv.sender %}
+      {% endif %}
+          <a href="{% url 'chat' partner.username %}">
+            <div>
+              <strong>@{{ partner.username }}</strong><br>
+              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
+            </div>
+            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
+          </a>
+        {% endwith %}
+    {% empty %}
+      <p class="text-center">No messages yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

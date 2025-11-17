@@ -1,0 +1,327 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Your Profile{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .profile-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 40px;
+    width: 700px;
+    margin: 60px auto;
+    color: #FBE4D8;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  }
+
+  .profile-card h2 {
+    color: #FBE4D8;
+    margin-bottom: 25px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .profile-card h4 {
+    color: #DFB6B2;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .profile-section-divider {
+    height: 2px;
+    background: rgba(223, 182, 178, 0.3);
+    margin: 25px 0;
+  }
+
+  label {
+    color: #DFB6B2;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .form-control {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #FBE4D8;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+  }
+
+  .form-control::placeholder {
+    color: rgba(251, 228, 216, 0.5);
+  }
+
+  .form-control:focus {
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    box-shadow: 0 0 8px #854F6C;
+    color: #FBE4D8;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .profile-preview-section {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(223, 182, 178, 0.2);
+  }
+
+  .profile-picture-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .profile-picture-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #DFB6B2;
+    margin: 0 auto 15px;
+    display: block;
+  }
+
+  .profile-picture-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(223, 182, 178, 0.2);
+    border: 3px solid #DFB6B2;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #DFB6B2;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 15px;
+  }
+
+  .btn-submit {
+    background: #854F6C;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    color: #FBE4D8;
+    font-weight: 600;
+    flex: 1;
+    transition: 0.3s;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .btn-submit:hover {
+    background: #522B5B;
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(132, 79, 108, 0.4);
+  }
+
+  .btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid #DFB6B2;
+    padding: 12px 20px;
+    border-radius: 10px;
+    color: #DFB6B2;
+    font-weight: 600;
+    flex: 1;
+    transition: 0.3s;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #FBE4D8;
+    color: #FBE4D8;
+    transform: scale(1.03);
+  }
+
+  .char-count {
+    font-size: 0.85rem;
+    color: #DFB6B2;
+    text-align: right;
+    margin-top: -10px;
+    margin-bottom: 15px;
+  }
+
+  .help-text {
+    color: rgba(223, 182, 178, 0.7);
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .profile-card {
+      width: 90%;
+      padding: 30px 20px;
+      margin: 30px auto;
+    }
+
+    .row-2col {
+      grid-template-columns: 1fr;
+    }
+
+    .btn-row {
+      flex-direction: column;
+    }
+
+    .btn-submit, .btn-cancel {
+      width: 100%;
+    }
+  }
+
+  .error-message {
+    color: #FFB3B3;
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+</style>
+
+<div class="profile-card">
+  <h2>✨ Edit Your Profile</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Profile Picture Section -->
+    <h4>📸 Profile Picture</h4>
+    
+    <div class="profile-picture-container">
+      {% if request.user.profile.image %}
+        <img src="{{ request.user.profile.image.url }}" 
+             alt="Profile Picture" 
+             class="profile-picture-preview">
+      {% else %}
+        <div class="profile-picture-placeholder">
+          👤
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ p_form.image.id_for_label }}">Upload New Picture</label>
+      {{ p_form.image|add_class:"form-control" }}
+      {% if p_form.image.errors %}
+        <div class="error-message">{{ p_form.image.errors }}</div>
+      {% endif %}
+      <div class="help-text">📁 JPG, PNG • Max 5MB</div>
+    </div>
+
+    <div class="profile-section-divider"></div>
+
+    <!-- Account Information Section -->
+    <h4>👤 Account Information</h4>
+
+    <div class="row-2col">
+      <div class="form-group">
+        <label for="{{ u_form.first_name.id_for_label }}">First Name</label>
+        {{ u_form.first_name|add_class:"form-control" }}
+        {% if u_form.first_name.errors %}
+          <div class="error-message">{{ u_form.first_name.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ u_form.last_name.id_for_label }}">Last Name</label>
+        {{ u_form.last_name|add_class:"form-control" }}
+        {% if u_form.last_name.errors %}
+          <div class="error-message">{{ u_form.last_name.errors }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ u_form.username.id_for_label }}">Username</label>
+      {{ u_form.username|add_class:"form-control" }}
+      <div class="help-text">🔒 Cannot be changed</div>
+      {% if u_form.username.errors %}
+        <div class="error-message">{{ u_form.username.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ u_form.email.id_for_label }}">Email Address</label>
+      {{ u_form.email|add_class:"form-control" }}
+      {% if u_form.email.errors %}
+        <div class="error-message">{{ u_form.email.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="profile-section-divider"></div>
+
+    <!-- Bio Section -->
+    <h4>✍️ About You</h4>
+
+    <div class="form-group">
+      <label for="{{ p_form.bio.id_for_label }}">Bio</label>
+      {{ p_form.bio|add_class:"form-control" }}
+      <div class="char-count" id="bioCount">0 / 500</div>
+      {% if p_form.bio.errors %}
+        <div class="error-message">{{ p_form.bio.errors }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-row">
+      <a href="{% url 'profile' username=request.user.username %}" class="btn-cancel">← Cancel</a>
+      <button type="submit" class="btn-submit">💾 Save Changes</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Bio character counter
+  const bioInput = document.getElementById('{{ p_form.bio.id_for_label }}');
+  const bioCount = document.getElementById('bioCount');
+
+  if (bioInput) {
+    function updateBioCount() {
+      bioCount.textContent = `${bioInput.value.length} / 500`;
+    }
+    
+    bioInput.addEventListener('input', updateBioCount);
+    // Initialize on page load
+    updateBioCount();
+  }
+
+  // Smooth form submission feedback
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const btn = document.querySelector('.btn-submit');
+    btn.textContent = '⏳ Saving...';
+    btn.disabled = true;
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'blog/base.html' %}
+{% block title %}Login — My Blog{% endblock %}
+{% block content %}
+
+<style>
+    body {
+        background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C);
+        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        color: #FBE4D8;
+    }
+
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 150px);
+        padding-top: 50px;
+    }
+
+    .login-card {
+        background: rgba(255, 255, 255, 0.10);
+        backdrop-filter: blur(12px);
+        border-radius: 18px;
+        padding: 40px 35px;
+        width: 420px;
+        text-align: center;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .login-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        color: #FBE4D8;
+    }
+
+    .input-group {
+        margin-bottom: 18px;
+        text-align: left;
+    }
+
+    .input-group label {
+        font-size: 14px;
+        margin-bottom: 5px;
+        display: block;
+        color: #FBE4D8;
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.18);
+        border: none;
+        border-radius: 10px;
+        height: 45px;
+        width: 100%;
+        padding: 10px;
+        color: #fff;
+        transition: 0.3s;
+    }
+
+    .form-control::placeholder {
+        color: #EFC9C3;
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.25);
+        outline: none;
+    }
+
+    .btn-login {
+        width: 100%;
+        background: #DFB6B2;
+        color: #2B124C;
+        padding: 12px;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: 0.3s;
+        margin-top: 10px;
+    }
+
+    .btn-login:hover {
+        background: #FBE4D8;
+        transform: scale(1.03);
+    }
+
+    .extra-links {
+        margin-top: 20px;
+    }
+
+    .extra-links a {
+        text-decoration: none;
+        color: #FFD2D2;
+        font-weight: 500;
+    }
+
+    .extra-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-title">Login</div>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+
+        <div class="extra-links">
+            Don’t have an account?
+            <a href="{% url 'register' %}">Register</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

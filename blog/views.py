@@ -1,0 +1,191 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib import messages
+from django.db.models import Q
+from .models import Post, Profile, Message
+from .forms import PostForm, UserUpdateForm, ProfileUpdateForm, MessageForm
+
+
+# ----------------------------
+# 🏠 Home Page
+# ----------------------------
+def home(request):
+    posts = Post.objects.filter(published=True).order_by('-date_posted')
+    return render(request, 'blog/home.html', {'posts': posts})
+
+
+# ----------------------------
+# 📝 Create Post
+# ----------------------------
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.slug = post.title.lower().replace(' ', '-')[:200]
+            post.save()
+            messages.success(request, "✅ Post created successfully!")
+            return redirect('post_detail', pk=post.pk)
+        messages.error(request, "⚠️ Please fix the errors below.")
+    else:
+        form = PostForm()
+    return render(request, 'blog/post_form.html', {'form': form})
+
+
+# ----------------------------
+# 📄 Post Detail
+# ----------------------------
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    return render(request, 'blog/post_detail.html', {'post': post})
+
+
+# ----------------------------
+# ✏️ Edit Post
+# ----------------------------
+@login_required
+def post_edit(request, pk):
+    post = get_object_or_404(Post, pk=pk, author=request.user)
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✏️ Post updated successfully!")
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = PostForm(instance=post)
+    return render(request, 'blog/post_form.html', {'form': form})
+
+
+# ----------------------------
+# 🗑️ Delete Post
+# ----------------------------
+@login_required
+def post_delete(request, pk):
+    post = get_object_or_404(Post, pk=pk, author=request.user)
+    if request.method == 'POST':
+        post.delete()
+        messages.success(request, "🗑️ Post deleted successfully!")
+        return redirect('home')
+    return render(request, 'blog/post_confirm_delete.html', {'post': post})
+
+
+# ----------------------------
+# 👤 Profile View + Follow
+# ----------------------------
+@login_required
+def profile_view(request, username):
+    user_obj = get_object_or_404(User, username=username)
+    profile, _ = Profile.objects.get_or_create(user=user_obj)
+
+    u_form = p_form = None
+
+    # Update profile
+    if request.user == user_obj:
+        if request.method == 'POST' and 'update' in request.POST:
+            u_form = UserUpdateForm(request.POST, instance=request.user)
+            p_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+            if u_form.is_valid() and p_form.is_valid():
+                u_form.save()
+                p_form.save()
+                messages.success(request, "✅ Your profile has been updated!")
+                return redirect('profile', username=request.user.username)
+        else:
+            u_form = UserUpdateForm(instance=request.user)
+            p_form = ProfileUpdateForm(instance=profile)
+
+    # Follow / Unfollow logic
+    current_profile, _ = Profile.objects.get_or_create(user=request.user)
+    is_following = current_profile in profile.followers.all()
+
+    if request.method == 'POST' and 'follow' in request.POST:
+        if current_profile != profile:
+            if is_following:
+                profile.followers.remove(current_profile)
+                messages.info(request, f"You unfollowed {user_obj.username}")
+            else:
+                profile.followers.add(current_profile)
+                messages.success(request, f"You followed {user_obj.username}")
+        return redirect('profile', username=username)
+
+    posts = Post.objects.filter(author=user_obj, published=True).order_by('-date_posted')
+
+    return render(request, 'blog/profile.html', {
+        'user_obj': user_obj,
+        'profile': profile,
+        'u_form': u_form,
+        'p_form': p_form,
+        'is_following': is_following,
+        'posts': posts
+    })
+
+
+# ----------------------------
+# 🆕 Register
+# ----------------------------
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            Profile.objects.get_or_create(user=user)
+            login(request, user)
+            messages.success(request, "✅ Account created successfully!")
+            return redirect('home')
+    else:
+        form = UserCreationForm()
+    return render(request, 'blog/register.html', {'form': form})
+
+
+# ----------------------------
+# 🔍 Search Profiles
+# ----------------------------
+@login_required
+def search_profiles(request):
+    query = request.GET.get('q', '').strip()
+    results = User.objects.filter(username__icontains=query) if query else []
+    return render(request, 'blog/search.html', {'results': results, 'query': query})
+
+
+# ----------------------------
+# 💬 Messaging System
+# ----------------------------
+@login_required
+def inbox(request):
+    messages_qs = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user))
+    latest_msgs = {}
+    for msg in messages_qs:
+        partner = msg.receiver if msg.sender == request.user else msg.sender
+        if partner not in latest_msgs or msg.timestamp > latest_msgs[partner].timestamp:
+            latest_msgs[partner] = msg
+    context = {'conversations': latest_msgs.values()}
+    return render(request, 'blog/inbox.html', context)
+
+
+@login_required
+def chat_view(request, username):
+    user2 = get_object_or_404(User, username=username)
+    messages_qs = Message.objects.filter(
+        Q(sender=request.user, receiver=user2) | Q(sender=user2, receiver=request.user)
+    ).order_by('timestamp')
+
+    # mark messages as read
+    Message.objects.filter(receiver=request.user, sender=user2, is_read=False).update(is_read=True)
+
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            msg = form.save(commit=False)
+            msg.sender = request.user
+            msg.receiver = user2
+            msg.save()
+            return redirect('chat', username=username)
+    else:
+        form = MessageForm()
+
+    return render(request, 'blog/chat.html', {'user2': user2, 'messages': messages_qs, 'form': form})
