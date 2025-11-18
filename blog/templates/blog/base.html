@@ -222,7 +222,13 @@
   </style>
 </head>
 
-<body>
+<body
+  {% comment %}Apply the site-level background from `blog_setting` (admin-managed).{% endcomment %}
+  {% if blog_setting and blog_setting.background_image %}
+    style="background-image: url('{{ blog_setting.background_image.url }}'); background-size: cover; background-attachment: fixed;"
+  {% elif blog_setting and blog_setting.background_color %}
+    style="background: {{ blog_setting.background_color }};"
+  {% endif %}>
   <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
       <a class="navbar-brand" href="{% url 'home' %}">
@@ -232,6 +238,10 @@
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        <form class="d-flex me-auto" method="get" action="{% url 'search_all' %}">
+          <input class="form-control me-2" type="search" name="q" placeholder="Search by ID or title" aria-label="Search" style="min-width:220px;">
+          <button class="btn btn-outline-light" type="submit">Search</button>
+        </form>
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
             <li class="nav-item">

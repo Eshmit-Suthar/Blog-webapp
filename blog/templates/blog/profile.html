@@ -28,6 +28,16 @@
   margin: 0;
   color: #DFB6B2;
 }
+  .draft-badge {
+    display: inline-block;
+    background: #f8d7da;
+    color: #8b1f1f;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+  }
 .profile-actions {
   display: flex;
   gap: 15px;
@@ -90,12 +100,89 @@ form .form-control {
 
   <div class="bio-box mt-4">
     <h5><i data-feather="book-open"></i> Recent Posts</h5>
+    {% if request.user == user_obj %}
+      <div style="margin:8px 0 16px;">
+        {% if show_all %}
+          <a href="{% url 'profile' user_obj.username %}" class="btn-edit">Show published only</a>
+        {% else %}
+          <a href="{% url 'profile' user_obj.username %}?all=1" class="btn-edit">Show all posts</a>
+        {% endif %}
+      </div>
+    {% endif %}
     {% for post in posts %}
-      <p>📝 <a href="{% url 'post_detail' post.pk %}" style="color:#DFB6B2;">{{ post.title }}</a></p>
+      <p>📝 <a href="{% url 'post_detail' post.pk %}" style="color:#DFB6B2;">{{ post.title }}</a>
+      {% if not post.published and request.user == user_obj %}<span class="draft-badge">Draft</span>{% endif %}</p>
     {% empty %}
       <p>No posts yet.</p>
     {% endfor %}
   </div>
+
+  <div class="bio-box mt-4">
+    <h5><i data-feather="users"></i> Followers ({{ followers_count }})</h5>
+    {% if followers_list %}
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;">
+        {% for f in followers_list %}
+          <div style="background:rgba(255,255,255,0.04);padding:8px;border-radius:8px;min-width:140px;display:flex;align-items:center;gap:10px;">
+            <img src="{{ f.image.url|default:'https://via.placeholder.com/40' }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />
+            <div style="flex:1;">
+              <a href="{% url 'profile' f.user.username %}" style="color:#DFB6B2;font-weight:600;">@{{ f.user.username }}</a>
+              {% if request.user.is_authenticated and request.user.username != f.user.username %}
+                <form method="post" action="{% url 'toggle_follow' f.user.username %}" style="margin-top:6px;">
+                  {% csrf_token %}
+                  <button class="btn-follow" style="padding:6px 10px;font-size:0.8rem;">Follow / Unfollow</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No followers yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="bio-box mt-4">
+    <h5><i data-feather="user-check"></i> Following ({{ following_count }})</h5>
+    {% if following_list %}
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;">
+        {% for f in following_list %}
+          <div style="background:rgba(255,255,255,0.04);padding:8px;border-radius:8px;min-width:140px;display:flex;align-items:center;gap:10px;">
+            <img src="{{ f.image.url|default:'https://via.placeholder.com/40' }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />
+            <div style="flex:1;">
+              <a href="{% url 'profile' f.user.username %}" style="color:#DFB6B2;font-weight:600;">@{{ f.user.username }}</a>
+              {% if request.user.is_authenticated and request.user.username != f.user.username %}
+                <form method="post" action="{% url 'toggle_follow' f.user.username %}" style="margin-top:6px;">
+                  {% csrf_token %}
+                  <button class="btn-follow" style="padding:6px 10px;font-size:0.8rem;">Follow / Unfollow</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Not following anyone yet.</p>
+    {% endif %}
+  </div>
+
+  {% if request.user == user_obj %}
+  <div class="bio-box mt-4">
+    <h5><i data-feather="archive"></i> My Posts</h5>
+    <p><a href="{% url 'post_new' %}" class="btn-edit">+ Create New Post</a></p>
+    {% for post in my_posts %}
+      <div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.04);">
+        <a href="{% url 'post_detail' post.pk %}" style="color:#DFB6B2;font-weight:600;">{{ post.title }}</a>
+        {% if not post.published %}<span class="draft-badge">Draft</span>{% endif %}
+        <div style="margin-top:6px;">
+          <a href="{% url 'post_edit' post.pk %}" class="btn btn-warning btn-sm" style="margin-right:8px;">Edit</a>
+          <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm">Delete</a>
+        </div>
+      </div>
+    {% empty %}
+      <p>You have not created any posts yet.</p>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://unpkg.com/feather-icons"></script>

@@ -22,6 +22,9 @@ class Post(models.Model):
     content = RichTextField() if RichTextField else models.TextField()
     tags = models.CharField(max_length=200, blank=True)
     image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    # Per-post background options: a solid color or an optional background image
+    background_color = models.CharField(max_length=7, blank=True, default='#ffffff')
+    background_image = models.ImageField(upload_to='post_backgrounds/', blank=True, null=True)
     date_posted = models.DateTimeField(default=timezone.now)
     published = models.BooleanField(default=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
@@ -47,6 +50,19 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
+
+class BlogSetting(models.Model):
+    """Singleton model to store global blog appearance settings editable via admin."""
+    background_color = models.CharField(max_length=7, blank=True, default='#ffffff')
+    background_image = models.ImageField(upload_to='site_backgrounds/', blank=True, null=True)
+
+    def __str__(self):
+        return "Blog Settings"
+
+    class Meta:
+        verbose_name = 'Blog Setting'
+        verbose_name_plural = 'Blog Settings'
+
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -60,7 +76,7 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
 class Message(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
-    subject = models.CharField(max_length=200)
+    subject = models.CharField(max_length=200, blank=True, default='')
     body = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)

@@ -1,0 +1,24 @@
+{% extends 'blog/base.html' %}
+{% block title %}Search Posts{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Search results for "{{ query }}"</h3>
+  <hr />
+  {% if posts %}
+    <div class="list-group">
+      {% for post in posts %}
+        <a href="{% url 'post_detail' post.pk %}" class="list-group-item list-group-item-action">
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">{{ post.title }}</h5>
+            <small>{{ post.date_posted|date:"M d, Y" }}</small>
+          </div>
+          <p class="mb-1">{{ post.content|truncatewords:20 }}</p>
+          <small>by {{ post.author.username }} {% if not post.published %}<span style="color:#f8d7da;font-weight:600;margin-left:8px;">Draft</span>{% endif %}</small>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No posts found matching your query.</p>
+  {% endif %}
+</div>
+{% endblock %}

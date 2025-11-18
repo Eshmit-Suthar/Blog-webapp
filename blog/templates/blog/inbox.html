@@ -48,27 +48,19 @@
   <h3>📥 Inbox</h3>
   <div class="user-list">
     {% for conv in conversations %}
-      {% if conv.sender == request.user %}
-        {% with partner=conv.receiver %}
-          <a href="{% url 'chat' partner.username %}">
-            <div>
-              <strong>@{{ partner.username }}</strong><br>
-              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
-            </div>
-            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
-          </a>
-        {% endwith %}
-      {% else %}
-        {% with partner=conv.sender %}
-          <a href="{% url 'chat' partner.username %}">
-            <div>
-              <strong>@{{ partner.username }}</strong><br>
-              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
-            </div>
-            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
-          </a>
-        {% endwith %}
-      {% endif %}
+      <a href="{% url 'chat' conv.partner.username %}">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="{{ conv.partner.profile.image.url|default:'https://via.placeholder.com/48' }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />
+          <div style="flex:1;">
+            <strong>@{{ conv.partner.username }}</strong>
+            {% if conv.unread and conv.unread > 0 %}
+              <span style="background:#ff5c7a;color:#fff;padding:3px 8px;border-radius:12px;font-size:0.75rem;margin-left:8px;">{{ conv.unread }} new</span>
+            {% endif %}
+            <div class="msg-preview">{{ conv.last_msg.body|truncatewords:12 }}</div>
+          </div>
+          <span class="timestamp">{{ conv.last_msg.timestamp|date:"M d, H:i" }}</span>
+        </div>
+      </a>
     {% empty %}
       <p>No messages yet.</p>
     {% endfor %}
