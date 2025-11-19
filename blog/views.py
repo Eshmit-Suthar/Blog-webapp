@@ -13,7 +13,11 @@ from .forms import PostForm, UserUpdateForm, ProfileUpdateForm, MessageForm
 # 🏠 Home Page
 # ----------------------------
 def home(request):
-    posts = Post.objects.filter(published=True).order_by('-date_posted')
+    # Show published posts to everyone; if the user is logged in, also include their own posts (including unpublished drafts)
+    if request.user.is_authenticated:
+        posts = Post.objects.filter(Q(published=True) | Q(author=request.user)).order_by('-date_posted')
+    else:
+        posts = Post.objects.filter(published=True).order_by('-date_posted')
     return render(request, 'blog/home.html', {'posts': posts})
 
 
@@ -113,7 +117,25 @@ def profile_view(request, username):
                 messages.success(request, f"You followed {user_obj.username}")
         return redirect('profile', username=username)
 
-    posts = Post.objects.filter(author=user_obj, published=True).order_by('-date_posted')
+    # Allow the profile owner to toggle viewing all their posts (including drafts) via ?all=1
+    show_all = (request.user == user_obj and request.GET.get('all') == '1')
+    if show_all:
+        posts = Post.objects.filter(author=user_obj).order_by('-date_posted')
+    else:
+        posts = Post.objects.filter(author=user_obj, published=True).order_by('-date_posted')
+
+    # Provide a separate list of all posts for the profile owner (used in 'My Posts' section)
+    my_posts = None
+    if request.user == user_obj:
+        my_posts = Post.objects.filter(author=user_obj).order_by('-date_posted')
+
+    # follower/following counts and lists
+    followers_count = profile.followers.count()
+    following_count = profile.following.count()
+
+    # Lists of Profile objects for display (convert to user objects in template as needed)
+    followers_list = profile.followers.all()
+    following_list = profile.following.all()
 
     return render(request, 'blog/profile.html', {
         'user_obj': user_obj,
@@ -121,8 +143,82 @@ def profile_view(request, username):
         'u_form': u_form,
         'p_form': p_form,
         'is_following': is_following,
-        'posts': posts
+        'posts': posts,
+        'show_all': show_all,
+        'my_posts': my_posts,
+        'followers_count': followers_count,
+        'following_count': following_count,
+        'followers_list': followers_list,
+        'following_list': following_list
     })
+
+
+
+@login_required
+def toggle_follow(request, username):
+    """Toggle follow/unfollow for the current user to the target username."""
+    target_user = get_object_or_404(User, username=username)
+    if target_user == request.user:
+        return redirect('profile', username=username)
+
+    current_profile, _ = Profile.objects.get_or_create(user=request.user)
+    target_profile, _ = Profile.objects.get_or_create(user=target_user)
+
+    if current_profile in target_profile.followers.all():
+        target_profile.followers.remove(current_profile)
+        messages.info(request, f"You unfollowed {target_user.username}")
+    else:
+        target_profile.followers.add(current_profile)
+        messages.success(request, f"You followed {target_user.username}")
+
+    # Redirect back to referrer if available, else to target profile
+    next_url = request.META.get('HTTP_REFERER')
+    if next_url:
+        return redirect(next_url)
+    return redirect('profile', username=username)
+
+
+def search_posts(request):
+    """Search posts by numeric id (redirect to detail) or by title substring."""
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return render(request, 'blog/post_search_results.html', {'query': q, 'posts': []})
+
+    # If q is integer, try redirect to that post by pk
+    if q.isdigit():
+        try:
+            post = Post.objects.get(pk=int(q))
+            return redirect('post_detail', pk=post.pk)
+        except Post.DoesNotExist:
+            # fall through to title search
+            pass
+
+    # Only show unpublished posts to their authors; everyone else sees published posts only
+    if request.user.is_authenticated:
+        posts = Post.objects.filter(title__icontains=q).filter(Q(published=True) | Q(author=request.user))
+    else:
+        posts = Post.objects.filter(title__icontains=q, published=True)
+
+    return render(request, 'blog/post_search_results.html', {'query': q, 'posts': posts})
+
+
+def search_all(request):
+    """Combined search that returns matching profiles and posts.
+    - Profiles: username substring matches
+    - Posts: title substring matches (only published posts for non-authors)
+    """
+    q = request.GET.get('q', '').strip()
+    profiles = User.objects.filter(username__icontains=q) if q else []
+
+    if q:
+        if request.user.is_authenticated:
+            posts = Post.objects.filter(title__icontains=q).filter(Q(published=True) | Q(author=request.user))
+        else:
+            posts = Post.objects.filter(title__icontains=q, published=True)
+    else:
+        posts = []
+
+    return render(request, 'blog/search_all_results.html', {'query': q, 'profiles': profiles, 'posts': posts})
 
 
 # ----------------------------
@@ -157,14 +253,24 @@ def search_profiles(request):
 # ----------------------------
 @login_required
 def inbox(request):
-    messages_qs = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user))
-    latest_msgs = {}
+    messages_qs = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user)).order_by('-timestamp')
+
+    # Build conversation list containing partner user, last message, and unread count
+    conv_map = {}
     for msg in messages_qs:
         partner = msg.receiver if msg.sender == request.user else msg.sender
-        if partner not in latest_msgs or msg.timestamp > latest_msgs[partner].timestamp:
-            latest_msgs[partner] = msg
-    context = {'conversations': latest_msgs.values()}
-    return render(request, 'blog/inbox.html', context)
+        if partner.username not in conv_map:
+            # unread messages for this partner (where partner is sender and receiver is request.user)
+            unread_count = Message.objects.filter(sender=partner, receiver=request.user, is_read=False).count()
+            conv_map[partner.username] = {
+                'partner': partner,
+                'last_msg': msg,
+                'unread': unread_count
+            }
+
+    # Convert to a list sorted by last_msg timestamp
+    conversations = sorted(conv_map.values(), key=lambda x: x['last_msg'].timestamp, reverse=True)
+    return render(request, 'blog/inbox.html', {'conversations': conversations})
 
 
 @login_required

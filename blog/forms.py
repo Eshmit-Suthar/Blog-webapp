@@ -9,10 +9,9 @@ from .models import Post, Comment, Profile, Message
 # ----------------------------
 class PostForm(forms.ModelForm):
     content = forms.CharField(widget=CKEditorWidget(), label="Post Content")
-
     class Meta:
         model = Post
-        fields = ['title', 'content', 'tags', 'category', 'image', 'published']
+        fields = ['title', 'content', 'tags', 'category', 'image', 'published', 'background_color', 'background_image']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -25,8 +24,16 @@ class PostForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={'class': 'form-control'}),
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'background_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'published': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    # Add a color input for background_color
+    background_color = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'type': 'color', 'class': 'form-control', 'value': '#ffffff'}),
+        label='Background Color'
+    )
 
 
 # ----------------------------
@@ -92,7 +99,7 @@ class ProfileUpdateForm(forms.ModelForm):
 # 💌 Messaging Form
 # ----------------------------
 class MessageForm(forms.ModelForm):
-    content = forms.CharField(
+    body = forms.CharField(
         widget=forms.Textarea(attrs={
             'rows': 3,
             'placeholder': 'Type your message...'
@@ -102,4 +109,4 @@ class MessageForm(forms.ModelForm):
 
     class Meta:
         model = Message
-        fields = ['content']
+        fields = ['body']

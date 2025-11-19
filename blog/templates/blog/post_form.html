@@ -136,6 +136,18 @@
     </div>
     {% endif %}
 
+    <div class="mb-3">
+      <label for="id_background_color"><i class="fa-solid fa-fill-drip"></i> Background Color</label>
+      {{ form.background_color|add_class:"form-control" }}
+    </div>
+
+    <div class="mb-3">
+      <label for="id_background_image"><i class="fa-solid fa-photo-film"></i> Background Image (optional)</label>
+      {{ form.background_image|add_class:"form-control" }}
+    </div>
+
+    <!-- Site background is managed globally; per-post background UI removed -->
+
     <div class="btn-row">
       <button type="button" class="btn-submit" onclick="previewPost()">
         <i class="fa-solid fa-eye"></i> Preview

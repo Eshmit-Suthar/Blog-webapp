@@ -69,7 +69,7 @@ body {
           <a href="{% url 'chat' partner.username %}">
             <div>
               <strong>@{{ partner.username }}</strong><br>
-              <span class="msg-preview">{{ conv.content|truncatewords:8 }}</span>
+              <span class="msg-preview">{{ conv.body|truncatewords:8 }}</span>
             </div>
             <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
           </a>

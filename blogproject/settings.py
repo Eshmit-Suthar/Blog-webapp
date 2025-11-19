@@ -42,6 +42,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',  # ✅ Added debug
                 'django.template.context_processors.request',
+                'blog.context_processors.blog_settings',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],

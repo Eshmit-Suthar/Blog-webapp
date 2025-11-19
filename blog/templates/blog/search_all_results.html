@@ -1,0 +1,51 @@
+{% extends 'blog/base.html' %}
+{% block title %}Search Results{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Search results for "{{ query }}"</h3>
+  <hr />
+
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Profiles</h5>
+      {% if profiles %}
+        <ul class="list-group">
+          {% for user in profiles %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <a href="{% url 'profile' user.username %}">{{ user.username }}</a>
+              {% if request.user.is_authenticated and request.user.username != user.username %}
+                <form method="post" action="{% url 'toggle_follow' user.username %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-primary">Follow / Unfollow</button>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No profiles found.</p>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <h5>Posts</h5>
+      {% if posts %}
+        <div class="list-group">
+          {% for post in posts %}
+            <a href="{% url 'post_detail' post.pk %}" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ post.title }}</h6>
+                <small>{{ post.date_posted|date:"M d, Y" }}</small>
+              </div>
+              <p class="mb-1">{{ post.content|truncatewords:20 }}</p>
+              <small>by {{ post.author.username }} {% if not post.published %}<span style="color:#f8d7da;font-weight:600;margin-left:8px;">Draft</span>{% endif %}</small>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No posts found.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
