@@ -57,27 +57,141 @@ body {
 }
 </style>
 
-<div class="inbox-container">
-  <h3>📥 Inbox</h3>
-  <div class="user-list">
-    {% for conv in conversations %}
-      {% if conv.sender == request.user %}
-        {% with partner=conv.receiver %}
-      {% else %}
-        {% with partner=conv.sender %}
-      {% endif %}
-          <a href="{% url 'chat' partner.username %}">
-            <div>
-              <strong>@{{ partner.username }}</strong><br>
-              <span class="msg-preview">{{ conv.body|truncatewords:8 }}</span>
+<div class="inbox-container" style="max-width:1000px;display:grid;grid-template-columns:320px 1fr;gap:20px;">
+  <div>
+    <h3>📥 Inbox</h3>
+    <div style="margin:8px 0 16px;">
+      <form id="compose-form" onsubmit="event.preventDefault(); composeToUser();" style="display:flex;gap:8px;">
+        <input id="compose-username" type="text" placeholder="username to message (e.g. Arshita123)" style="flex:1;padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#FBE4D8;" />
+        <button type="submit" class="btn-follow" style="padding:8px 12px;">New</button>
+      </form>
+    </div>
+    <div class="user-list">
+      {% for conv in conversations %}
+        <a href="{% url 'chat' conv.partner.username %}">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="{{ conv.partner.profile.image.url|default:'https://via.placeholder.com/48' }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />
+            <div style="flex:1;">
+              <strong>@{{ conv.partner.username }}</strong>
+              {% if conv.unread and conv.unread > 0 %}
+                <span style="background:#ff5c7a;color:#fff;padding:3px 8px;border-radius:12px;font-size:0.75rem;margin-left:8px;">{{ conv.unread }} new</span>
+              {% endif %}
+              <div class="msg-preview">{{ conv.last_msg.body|truncatewords:12 }}</div>
             </div>
-            <span class="timestamp">{{ conv.timestamp|date:"M d, H:i" }}</span>
-          </a>
-        {% endwith %}
-    {% empty %}
-      <p class="text-center">No messages yet.</p>
-    {% endfor %}
+            <span class="timestamp">{{ conv.last_msg.timestamp|date:"M d, H:i" }}</span>
+          </div>
+        </a>
+      {% empty %}
+        <p class="text-center">No conversations yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:18px;">
+    <h4 style="margin-top:0;">Chat with @{{ user2.username }}</h4>
+    <div id="messages-container" style="max-height:520px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,0.03);">
+      {% for msg in messages %}
+        {% include 'blog/_message.html' with msg=msg %}
+      {% empty %}
+        <p>No messages yet. Say hello 👋</p>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:12px;">
+      <form id="message-form" onsubmit="event.preventDefault(); sendMessage();">
+        {% csrf_token %}
+        <textarea id="message-body" name="body" rows="3" placeholder="Type a message..." style="width:100%;padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#FBE4D8;">{{ form.body.value }}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+          <button id="send-btn" type="submit" class="btn-follow" style="padding:8px 12px;">Send</button>
+          <small style="opacity:0.8;color:#DFB6B2;">Press Enter+Ctrl to send as well</small>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+
+<script>
+  function composeToUser(){
+    const input = document.getElementById('compose-username');
+    const v = input.value.trim();
+    if(!v){ alert('Enter a username to message.'); return; }
+    const url = '/chat/' + encodeURIComponent(v) + '/';
+    window.location.href = url;
+  }
+
+  // --- AJAX messaging ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const sendUrl = '{% url "chat_send_ajax" user2.username %}';
+  const fetchUrl = '{% url "chat_messages_ajax" user2.username %}';
+  let lastId = {{ last_id|default:0 }};
+
+  async function sendMessage(){
+    const bodyEl = document.getElementById('message-body');
+    const body = bodyEl.value.trim();
+    if(!body) return;
+    document.getElementById('send-btn').disabled = true;
+    const resp = await fetch(sendUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({body: body})
+    });
+    document.getElementById('send-btn').disabled = false;
+    if(resp.ok){
+      const data = await resp.json();
+      const container = document.getElementById('messages-container');
+      container.insertAdjacentHTML('beforeend', data.message_html);
+      lastId = data.msg_id || lastId;
+      bodyEl.value = '';
+      container.scrollTop = container.scrollHeight;
+    } else {
+      const err = await resp.json().catch(()=>({error:'Unknown error'}));
+      alert(err.error || 'Failed to send message');
+    }
+  }
+
+  async function pollMessages(){
+    try{
+      const url = fetchUrl + '?after=' + encodeURIComponent(lastId);
+      const resp = await fetch(url, {credentials: 'same-origin'});
+      if(resp.ok){
+        const data = await resp.json();
+        if(data.messages_html){
+          const container = document.getElementById('messages-container');
+          container.insertAdjacentHTML('beforeend', data.messages_html);
+          if(data.last_id) lastId = data.last_id;
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }catch(e){ console.warn('poll error', e); }
+  }
+
+  // poll every 3s
+  setInterval(pollMessages, 3000);
+
+  // Ctrl+Enter to send
+  document.addEventListener('keydown', function(e){
+    if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+      const el = document.getElementById('message-body');
+      if(document.activeElement === el){ sendMessage(); }
+    }
+  });
+</script>
 
 {% endblock %}

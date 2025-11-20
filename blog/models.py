@@ -27,6 +27,8 @@ class Post(models.Model):
     background_image = models.ImageField(upload_to='post_backgrounds/', blank=True, null=True)
     date_posted = models.DateTimeField(default=timezone.now)
     published = models.BooleanField(default=True)
+    # Likes: users who liked this post
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return self.title
@@ -38,6 +40,8 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     body = models.TextField()
     date_posted = models.DateTimeField(default=timezone.now)
+    # Likes for comments
+    likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
 
     def __str__(self):
         return f'Comment by {self.author.username} on {self.post.title}'

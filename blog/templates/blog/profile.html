@@ -72,18 +72,27 @@ form .form-control {
 </style>
 
 <div class="profile-wrapper">
-  <div class="profile-header">
+  <div class="profile-header" style="display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:18px;">
     <img src="{{ profile.image.url|default:'https://via.placeholder.com/100' }}" alt="Profile Picture">
     <div>
-      <h3>@{{ user_obj.username }}</h3>
-      <p>{{ profile.bio|default:"No bio yet." }}</p>
+      <h3 style="margin-bottom:6px;">@{{ user_obj.username }} <span style="font-size:0.85rem;color:#DFB6B2;">• {{ followers_count }} followers</span></h3>
+      <p style="margin:0;color:rgba(251,228,216,0.9);">{{ profile.bio|default:"No bio yet." }}</p>
+    </div>
+    <div style="text-align:right;">
       {% if request.user != user_obj %}
-        <form method="POST">
+        <form method="POST" style="display:inline;">
           {% csrf_token %}
-          <button name="follow" class="btn-follow">
-            {% if is_following %}<i data-feather="user-minus"></i> Unfollow{% else %}<i data-feather="user-plus"></i> Follow{% endif %}
+          <button name="follow" class="btn-follow" style="margin-bottom:6px;">
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
           </button>
         </form>
+        {% if user.is_authenticated %}
+          <a href="{% url 'chat' user_obj.username %}" class="btn-follow" style="display:inline-block;margin-left:6px;">💬 Message</a>
+        {% else %}
+          <a href="{% url 'login' %}?next={% url 'chat' user_obj.username %}" class="btn-follow" style="display:inline-block;margin-left:6px;">💬 Message</a>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'post_new' %}" class="btn-edit">+ Create Post</a>
       {% endif %}
     </div>
   </div>
@@ -169,13 +178,19 @@ form .form-control {
   <div class="bio-box mt-4">
     <h5><i data-feather="archive"></i> My Posts</h5>
     <p><a href="{% url 'post_new' %}" class="btn-edit">+ Create New Post</a></p>
-    {% for post in my_posts %}
+        {% for post in my_posts %}
       <div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.04);">
         <a href="{% url 'post_detail' post.pk %}" style="color:#DFB6B2;font-weight:600;">{{ post.title }}</a>
         {% if not post.published %}<span class="draft-badge">Draft</span>{% endif %}
-        <div style="margin-top:6px;">
-          <a href="{% url 'post_edit' post.pk %}" class="btn btn-warning btn-sm" style="margin-right:8px;">Edit</a>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+          <a href="{% url 'post_edit' post.pk %}" class="btn btn-warning btn-sm">Edit</a>
           <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm">Delete</a>
+          <form method="post" action="{% url 'post_publish' post.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm" style="background:#6aa84f;color:#fff;border-radius:6px;padding:6px 10px;">
+              {% if post.published %}Unpublish{% else %}Publish{% endif %}
+            </button>
+          </form>
         </div>
       </div>
     {% empty %}

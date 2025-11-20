@@ -6,7 +6,13 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.db.models import Q
 from .models import Post, Profile, Message
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
 from .forms import PostForm, UserUpdateForm, ProfileUpdateForm, MessageForm
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.views.decorators.http import require_GET
 
 
 # ----------------------------
@@ -18,7 +24,11 @@ def home(request):
         posts = Post.objects.filter(Q(published=True) | Q(author=request.user)).order_by('-date_posted')
     else:
         posts = Post.objects.filter(published=True).order_by('-date_posted')
-    return render(request, 'blog/home.html', {'posts': posts})
+    # compute draft count for the right-column widget (avoid complex template expressions)
+    draft_count = 0
+    if request.user.is_authenticated:
+        draft_count = Post.objects.filter(author=request.user, published=False).count()
+    return render(request, 'blog/home.html', {'posts': posts, 'draft_count': draft_count})
 
 
 # ----------------------------
@@ -46,7 +56,39 @@ def post_create(request):
 # ----------------------------
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    return render(request, 'blog/post_detail.html', {'post': post})
+    # Handle new comment submissions
+    comment_form = None
+    if request.method == 'POST' and 'comment' in request.POST:
+        if not request.user.is_authenticated:
+            messages.error(request, "You must be logged in to comment.")
+            return redirect('login')
+        from .forms import CommentForm
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.author = request.user
+            comment.post = post
+            comment.save()
+            messages.success(request, "Comment added.")
+            return redirect('post_detail', pk=post.pk)
+    else:
+        from .forms import CommentForm
+        comment_form = CommentForm()
+
+    # Absolute URL for sharing
+    absolute_url = request.build_absolute_uri(post.get_absolute_url())
+
+    # Like state and count
+    liked = request.user.is_authenticated and (request.user in post.likes.all())
+    like_count = post.likes.count()
+
+    return render(request, 'blog/post_detail.html', {
+        'post': post,
+        'comment_form': comment_form,
+        'absolute_url': absolute_url,
+        'liked': liked,
+        'like_count': like_count,
+    })
 
 
 # ----------------------------
@@ -178,6 +220,24 @@ def toggle_follow(request, username):
     return redirect('profile', username=username)
 
 
+@login_required
+def toggle_publish(request, pk):
+    """Toggle published state for a post. Only the author may toggle."""
+    post = get_object_or_404(Post, pk=pk)
+    if post.author != request.user:
+        messages.error(request, "You don't have permission to publish/unpublish this post.")
+        return redirect('profile', username=request.user.username)
+
+    if request.method == 'POST':
+        post.published = not post.published
+        post.save()
+        state = 'published' if post.published else 'unpublished'
+        messages.success(request, f"Post {state} successfully.")
+
+    # Redirect back to the profile page of the author
+    return redirect('profile', username=post.author.username)
+
+
 def search_posts(request):
     """Search posts by numeric id (redirect to detail) or by title substring."""
     q = request.GET.get('q', '').strip()
@@ -204,19 +264,25 @@ def search_posts(request):
 
 def search_all(request):
     """Combined search that returns matching profiles and posts.
-    - Profiles: username substring matches
+    - Profiles: search username, first_name, last_name, or email
     - Posts: title substring matches (only published posts for non-authors)
     """
     q = request.GET.get('q', '').strip()
-    profiles = User.objects.filter(username__icontains=q) if q else []
+    # Allow '@username' queries by stripping a leading @ or other common prefix characters
+    if q.startswith('@') or q.startswith('#'):
+        q = q[1:].strip()
 
     if q:
+        profiles = User.objects.filter(
+            Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(email__icontains=q)
+        )
         if request.user.is_authenticated:
             posts = Post.objects.filter(title__icontains=q).filter(Q(published=True) | Q(author=request.user))
         else:
             posts = Post.objects.filter(title__icontains=q, published=True)
     else:
-        posts = []
+        profiles = User.objects.none()
+        posts = Post.objects.none()
 
     return render(request, 'blog/search_all_results.html', {'query': q, 'profiles': profiles, 'posts': posts})
 
@@ -244,8 +310,52 @@ def register(request):
 @login_required
 def search_profiles(request):
     query = request.GET.get('q', '').strip()
+    if query.startswith('@') or query.startswith('#'):
+        query = query[1:].strip()
     results = User.objects.filter(username__icontains=query) if query else []
     return render(request, 'blog/search.html', {'results': results, 'query': query})
+
+
+@login_required
+def toggle_like(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        if request.user in post.likes.all():
+            post.likes.remove(request.user)
+            messages.info(request, 'You unliked the post.')
+        else:
+            post.likes.add(request.user)
+            messages.success(request, 'You liked the post.')
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def toggle_like_ajax(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+    return JsonResponse({'liked': liked, 'like_count': post.likes.count()})
+
+
+@login_required
+@require_POST
+def add_comment_ajax(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    body = request.POST.get('body', '').strip()
+    if not body:
+        return JsonResponse({'error': 'Empty comment'}, status=400)
+    comment = None
+    from .models import Comment
+    comment = Comment.objects.create(post=post, author=request.user, body=body)
+    # Render single comment HTML to return
+    # include `request` in context so the partial can reflect the current user's liked state
+    html = render_to_string('blog/_comment.html', {'comment': comment, 'request': request})
+    return JsonResponse({'success': True, 'comment_html': html, 'comment_count': post.comments.count()})
 
 
 # ----------------------------
@@ -283,6 +393,23 @@ def chat_view(request, username):
     # mark messages as read
     Message.objects.filter(receiver=request.user, sender=user2, is_read=False).update(is_read=True)
 
+    # Build conversation list for sidebar (same structure as inbox view)
+    all_msgs = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user)).order_by('-timestamp')
+    conv_map = {}
+    for msg in all_msgs:
+        partner = msg.receiver if msg.sender == request.user else msg.sender
+        if partner.username not in conv_map:
+            unread_count = Message.objects.filter(sender=partner, receiver=request.user, is_read=False).count()
+            conv_map[partner.username] = {
+                'partner': partner,
+                'last_msg': msg,
+                'unread': unread_count
+            }
+    conversations = sorted(conv_map.values(), key=lambda x: x['last_msg'].timestamp, reverse=True)
+
+    # compute last_id for client polling to avoid fetching already-rendered messages
+    last_id = messages_qs.last().pk if messages_qs.exists() else 0
+
     if request.method == 'POST':
         form = MessageForm(request.POST)
         if form.is_valid():
@@ -294,4 +421,58 @@ def chat_view(request, username):
     else:
         form = MessageForm()
 
-    return render(request, 'blog/chat.html', {'user2': user2, 'messages': messages_qs, 'form': form})
+    return render(request, 'blog/chat.html', {
+        'user2': user2,
+        'messages': messages_qs,
+        'form': form,
+        'conversations': conversations,
+        'last_id': last_id,
+    })
+
+
+@login_required
+@require_POST
+def send_message_ajax(request, username):
+    """AJAX endpoint to send a message to `username`. Returns rendered message HTML."""
+    user2 = get_object_or_404(User, username=username)
+    body = request.POST.get('body', '').strip()
+    if not body:
+        return JsonResponse({'error': 'Empty message'}, status=400)
+    msg = Message.objects.create(sender=request.user, receiver=user2, body=body, timestamp=timezone.now())
+    # Render message partial
+    html = render_to_string('blog/_message.html', {'msg': msg, 'request': request})
+    return JsonResponse({'success': True, 'message_html': html, 'msg_id': msg.pk})
+
+
+@login_required
+@require_GET
+def chat_messages_ajax(request, username):
+    """Return rendered HTML for messages in conversation since optional `after` message id."""
+    user2 = get_object_or_404(User, username=username)
+    after = request.GET.get('after')
+    qs = Message.objects.filter(
+        Q(sender=request.user, receiver=user2) | Q(sender=user2, receiver=request.user)
+    ).order_by('timestamp')
+    if after and after.isdigit():
+        qs = qs.filter(pk__gt=int(after))
+    html = ''
+    for msg in qs:
+        html += render_to_string('blog/_message.html', {'msg': msg, 'request': request})
+    # mark as read the ones sent to request.user
+    Message.objects.filter(receiver=request.user, sender=user2, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True, 'messages_html': html, 'last_id': qs.last().pk if qs.exists() else None})
+
+
+@login_required
+@require_POST
+def toggle_comment_like_ajax(request, pk):
+    """Toggle like on a comment via AJAX."""
+    from .models import Comment
+    comment = get_object_or_404(Comment, pk=pk)
+    if request.user in comment.likes.all():
+        comment.likes.remove(request.user)
+        liked = False
+    else:
+        comment.likes.add(request.user)
+        liked = True
+    return JsonResponse({'liked': liked, 'like_count': comment.likes.count()})

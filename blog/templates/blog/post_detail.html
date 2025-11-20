@@ -2,28 +2,120 @@
 {% block title %}{{ post.title }} — My Blog{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm" style="border: none; overflow: hidden;">
-    {% comment %}Apply per-post background: image preferred, otherwise color (default white).{% endcomment %}
-    <div class="post-bg" style="padding:28px; border-radius:12px; {% if post.background_image %}background-image: url('{{ post.background_image.url }}'); background-size: cover; background-position: center;{% else %}background: {{ post.background_color|default:'#ffffff' }};{% endif %}">
-        <div style="background: rgba(0,0,0,0.35); padding:20px; border-radius:8px; color: #fff;">
-            <h2 class="card-title" style="color:#FBE4D8;">{{ post.title }}</h2>
-            <p class="text-muted">by {{ post.author.username }} on {{ post.date_posted|date:"F j, Y" }}</p>
-            <hr style="border-color: rgba(255,255,255,0.12);" />
-            {% if post.image %}
-            <div style="text-align:center;margin-bottom:16px;">
-                <img src="{{ post.image.url }}" alt="{{ post.title }}" style="max-width:100%;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.08);" />
-            </div>
+<style>
+    .post-layout { display:grid; grid-template-columns:1fr 280px; gap:20px; }
+    @media (max-width:1000px) { .post-layout { grid-template-columns:1fr; } .right-actions{order:2} }
+    .post-content { background: rgba(255,255,255,0.05);padding:18px;border-radius:8px; }
+
+    .post-content { background: rgba(255,255,255,0.05);padding:18px;border-radius:8px; }
+    .post-title{font-size:1.5rem;margin-bottom:6px;color:#FBE4D8}
+    .post-sub{color:#DFB6B2;margin-bottom:12px}
+    .post-body{color:#FBE4D8;line-height:1.6}
+    .post-media img{max-width:100%;border-radius:8px;margin:12px 0}
+
+    .right-actions .widget{background: rgba(255,255,255,0.06);padding:12px;border-radius:8px;margin-bottom:12px}
+    .btn-action{display:inline-block;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#FBE4D8}
+    body { background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C); }
+</style>
+
+<div class="post-layout">
+    <div class="post-content" {% if post.background_image %}style="background-image: url('{{ post.background_image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+        <div class="post-header">
+            <h1 class="post-title">{{ post.title }}</h1>
+            <div class="post-sub">by <a href="{% url 'profile' post.author.username %}">@{{ post.author.username }}</a> • {{ post.date_posted|date:"F j, Y" }}</div>
+        </div>
+        {% if post.image %}
+            <div class="post-media"><img src="{{ post.image.url }}" alt="{{ post.title }}" /></div>
+        {% endif %}
+        <div class="post-body">{{ post.content|linebreaks }}</div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <button id="likeBtn" data-pk="{{ post.pk }}" class="btn-action">{% if liked %}❤️ Like{% else %}🤍 Like{% endif %} ({{ like_count }})</button>
+            <button id="copyLinkBtn" class="btn-action">🔗 Share</button>
+            {% if post.author == user %}
+                <a class="btn-action" href="{% url 'post_edit' post.pk %}">✏️ Edit</a>
+                <a class="btn-action" href="{% url 'post_delete' post.pk %}">🗑 Delete</a>
             {% endif %}
-            <div class="card-text" style="color:#FBE4D8;">{{ post.content|linebreaks }}</div>
         </div>
 
-        {% if post.author == user %}
-        <div style="margin-top:12px; display:flex; gap:8px;">
-            <a href="{% url 'post_edit' post.pk %}" class="btn btn-warning btn-sm">✏️ Edit</a>
-            <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm">🗑 Delete</a>
+        <hr style="margin:18px 0;border:none;border-top:1px solid #eef2f7" />
+
+        <div>
+            <h4>Comments ({{ post.comments.count }})</h4>
+            <div id="comments-list" style="margin-top:12px;">
+                {% for comment in post.comments.all %}
+                    {% include 'blog/_comment.html' with comment=comment %}
+                {% empty %}
+                    <p>No comments yet.</p>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top:14px;">
+                {% if user.is_authenticated %}
+                    <form id="commentForm">
+                        {% csrf_token %}
+                        <textarea id="commentBody" name="body" rows="3" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e6e7eb;" placeholder="Write your comment..."></textarea>
+                        <div style="margin-top:8px"><button type="submit" class="btn-action">Post Comment</button></div>
+                    </form>
+                {% else %}
+                    <p><a href="{% url 'login' %}">Log in</a> to post a comment.</p>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
+
+    <aside class="right-actions">
+        <div class="widget">
+            <h5>Post Info</h5>
+            <p style="margin:6px 0;color:#6b7280">Views: {{ post.views|default:0 }}</p>
+            <p style="margin:6px 0;color:#6b7280">Tags: {% for t in post.tags.all %} <span style="background:#f3f4f6;padding:3px 6px;border-radius:6px;margin-right:6px;font-size:0.85rem">{{ t }}</span>{% endfor %}</p>
+        </div>
+        <div class="widget">
+            <h5>Share</h5>
+            <button class="btn-action" onclick="navigator.clipboard.writeText('{{ absolute_url }}')">Copy Link</button>
+        </div>
+    </aside>
 </div>
-<a href="{% url 'home' %}" class="btn btn-link mt-3">← Back to Home</a>
+
+<a href="{% url 'home' %}" style="display:inline-block;margin-top:14px;color:#6b7280;">← Back to Home</a>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // CSRF helper
+    function getCookie(name){let c=null;if(document.cookie&&document.cookie!==''){const cs=document.cookie.split(';');for(let i=0;i<cs.length;i++){const ck=cs[i].trim();if(ck.substring(0,name.length+1)===(name+'=')){c=decodeURIComponent(ck.substring(name.length+1));break;}}}return c}
+
+    const likeBtn = document.getElementById('likeBtn');
+    if(likeBtn){ likeBtn.addEventListener('click', async ()=>{
+        const pk = likeBtn.getAttribute('data-pk');
+        const url = `{% url 'post_like_ajax' 0 %}`.replace('/0/', `/${pk}/`);
+        try{ const resp = await fetch(url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}}); if(!resp.ok) throw 0; const d=await resp.json(); likeBtn.innerText = (d.liked? '❤️ Like':'🤍 Like') + ' ('+d.like_count+')'; }catch(e){console.warn('like failed',e)}
+    }); }
+
+    const commentForm = document.getElementById('commentForm');
+    if(commentForm){ commentForm.addEventListener('submit', async (e)=>{
+        e.preventDefault(); const pk='{{ post.pk }}'; const url=`{% url 'post_comment_ajax' 0 %}`.replace('/0/', `/${pk}/`); const body=document.getElementById('commentBody').value.trim(); if(!body) return; const fd=new FormData(); fd.append('body',body);
+        try{ const resp=await fetch(url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd}); if(!resp.ok){const err=await resp.json(); alert(err.error||'Failed'); return;} const data=await resp.json(); document.getElementById('comments-list').insertAdjacentHTML('beforeend', data.comment_html); document.getElementById('commentBody').value=''; }
+        catch(e){console.warn('comment failed',e)}
+    }); }
+
+    // Delegate comment-like button clicks
+    document.addEventListener('click', async function(e){
+        const btn = e.target.closest && e.target.closest('.comment-like-btn');
+        if(!btn) return;
+        const pk = btn.getAttribute('data-pk');
+        const url = `{% url 'comment_like_ajax' 0 %}`.replace('/0/', `/${pk}/`);
+        try{
+            const resp = await fetch(url, {method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')}});
+            if(!resp.ok) throw 0;
+            const d = await resp.json();
+            const span = btn.querySelector('.comment-like-count');
+            if(span) span.textContent = d.like_count;
+            btn.innerHTML = (d.liked? '❤️ <span class="comment-like-count">'+d.like_count+'</span>' : '🤍 <span class="comment-like-count">'+d.like_count+'</span>');
+        }catch(err){console.warn('comment-like failed', err)}
+    });
+
+    const copyBtn = document.getElementById('copyLinkBtn'); if(copyBtn){ copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText('{{ absolute_url }}'); copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='🔗 Share',1500);}catch(e){location.href='mailto:?body={{ absolute_url }}'} }); }
+</script>
 {% endblock %}

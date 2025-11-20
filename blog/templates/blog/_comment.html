@@ -1,0 +1,20 @@
+<div style="padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <strong>@{{ comment.author.username }}</strong>
+      <small class="text-muted">· {{ comment.date_posted|date:"M d, Y H:i" }}</small>
+    </div>
+    <div>
+      {% if request.user.is_authenticated %}
+        {% if request.user in comment.likes.all %}
+          <button class="comment-like-btn" data-pk="{{ comment.pk }}">❤️ <span class="comment-like-count">{{ comment.likes.count }}</span></button>
+        {% else %}
+          <button class="comment-like-btn" data-pk="{{ comment.pk }}">🤍 <span class="comment-like-count">{{ comment.likes.count }}</span></button>
+        {% endif %}
+      {% else %}
+        <span style="color:#9ca3af">❤️ {{ comment.likes.count }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="margin-top:6px;">{{ comment.body|linebreaks }}</div>
+</div>

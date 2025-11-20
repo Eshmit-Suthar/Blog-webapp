@@ -1,0 +1,7 @@
+{% comment %}Renders a single message bubble. Expects `msg` in context and `request` available.{% endcomment %}
+<div class="msg-bubble {% if msg.sender == request.user %}outgoing{% else %}incoming{% endif %}" data-msg-id="{{ msg.pk }}">
+  <div class="bubble-meta">
+    {% if msg.sender != request.user %}<strong>@{{ msg.sender.username }}</strong> • {% endif %}<small class="time">{{ msg.timestamp|date:"M d, H:i" }}</small>
+  </div>
+  <div class="bubble-body">{{ msg.body|linebreaksbr }}</div>
+</div>

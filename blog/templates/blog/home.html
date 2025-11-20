@@ -3,186 +3,99 @@
 
 {% block content %}
 <style>
-  .page-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 3rem;
-    background: linear-gradient(135deg, #fff 0%, #dfb6b2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: titleGlow 2s ease-in-out infinite;
-  }
-  @keyframes titleGlow {
-    0%, 100% { filter: drop-shadow(0 0 10px rgba(223, 182, 178, 0.3)); }
-    50% { filter: drop-shadow(0 0 20px rgba(223, 182, 178, 0.6)); }
-  }
+  /* Layout: left nav / feed / right widgets */
+  .layout { display: grid; grid-template-columns: 220px 1fr 300px; gap: 24px; align-items:start; }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .right-col, .left-col { order: 2; } }
 
-  .post-card {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    height: 100%;
-    position: relative;
-  }
-  .post-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #dfb6b2, #7a2c91, #dfb6b2);
-    background-size: 200% 100%;
-    animation: shimmer 3s linear infinite;
-  }
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .post-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 15px 40px rgba(223, 182, 178, 0.4);
-    border-color: rgba(223, 182, 178, 0.4);
-  }
+  .left-col { background: transparent; }
+  .nav-card { background: #fff; border-radius:8px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06);} 
 
-  .card-body {
-    padding: 1.8rem;
-  }
-  .card-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 1rem;
-    transition: color 0.3s ease;
-  }
-  .post-card:hover .card-title {
-    color: #dfb6b2;
-  }
-  .card-text {
-    color: #e8d8d3 !important;
-    line-height: 1.7;
-    margin-bottom: 1.5rem;
-    font-size: 0.95rem;
-  }
+  .feed { display:flex; flex-direction:column; gap:16px; }
+  .post-row { display:grid; grid-template-columns: 1fr; gap:12px; align-items:start; background:#fff;border-radius:8px;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,0.04);} 
 
-  .btn-read-more {
-    background: linear-gradient(135deg, #dfb6b2, #ecc8c5);
-    color: #2b124c;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 10px;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(223, 182, 178, 0.3);
-  }
-  .btn-read-more:hover {
-    background: linear-gradient(135deg, #ffffff, #f5e6e4);
-    color: #2b124c;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(223, 182, 178, 0.5);
-  }
+  .post-main h3 { margin:0 0 8px 0; font-size:1.05rem; }
+  .post-meta { font-size:0.85rem;color:#6b7280;margin-bottom:8px; }
+  .post-excerpt { color:#374151; margin-bottom:10px; }
+  .post-actions { display:flex;gap:8px;align-items:center;font-size:0.9rem; }
+  .action-btn { background:transparent;border:1px solid #e5e7eb;padding:6px 8px;border-radius:6px;cursor:pointer;color:#374151; }
 
-  .card-footer {
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem 1.8rem;
-    color: #d8c3be !important;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .draft-badge {
-    display: inline-block;
-    background: #f8d7da;
-    color: #8b1f1f;
-    padding: 3px 8px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-left: 8px;
-  }
-  .card-footer i {
-    color: #dfb6b2;
-  }
+  .right-col .widget { background:#fff;border-radius:8px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px }
+  .create-btn { background:#0079d3;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;display:inline-block }
 
-  .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-  }
-  .empty-state i {
-    font-size: 4rem;
-    color: #dfb6b2;
-    margin-bottom: 1.5rem;
-    opacity: 0.7;
-  }
-  .empty-state p {
-    font-size: 1.3rem;
-    color: #e8d8d3;
-  }
-
-  .row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-  }
-  @media (max-width: 768px) {
-    .row {
-      grid-template-columns: 1fr;
-    }
-  }
+  body { background: linear-gradient(180deg, #2B124C, #522B5B, #854F6C); color: #FBE4D8; }
+  .nav-card, .post-row, .right-col .widget { background: rgba(255,255,255,0.06); color: #FBE4D8; }
+  .nav-card ul li { color: #FBE4D8; }
+  .post-main a { color: #FBE4D8; }
+  .post-meta, .post-excerpt, .post-actions .action-btn { color: rgba(251,228,216,0.9); }
+  .vote-col { color: #E8D8D3; }
+  .action-btn { border-color: rgba(255,255,255,0.12); color: #FBE4D8; background: rgba(255,255,255,0.03); }
+  .create-btn { background: linear-gradient(135deg, #DFB6B2, #7A2C91); }
 </style>
 
-<h2 class="page-title">
-  <i class="fa-solid fa-newspaper"></i> Latest Posts
-</h2>
+<div class="layout">
+  <aside class="left-col">
+    <div class="nav-card">
+      <h4 style="margin:0 0 8px 0;">Home</h4>
+      <ul style="list-style:none;padding:0;margin:0;font-size:0.95rem;color:#FBE4D8;">
+        <li style="padding:6px 0;">Home</li>
+      </ul>
+    </div>
+  </aside>
 
-<div class="row">
+  <main class="feed">
     {% for post in posts %}
-    <div>
-        <div class="post-card">
-            <div class="card-body">
-                {% if post.image %}
-                  <div style="text-align:center;margin-bottom:12px;">
-                    <img src="{{ post.image.url }}" alt="{{ post.title }}" style="max-width:100%;height:180px;object-fit:cover;border-bottom-left-radius:8px;border-bottom-right-radius:8px;" />
-                  </div>
-                {% endif %}
-                <h5 class="card-title">
-                  {{ post.title }}
-                  {% if not post.published and request.user == post.author %}
-                    <span class="draft-badge">Draft</span>
-                  {% endif %}
-                </h5>
-                <p class="card-text">
-                    {{ post.content|truncatewords:25 }}
-                </p>
-                <a href="{% url 'post_detail' post.pk %}" class="btn-read-more">
-                  <i class="fa-solid fa-arrow-right"></i> Read More
-                </a>
-            </div>
-            <div class="card-footer">
-                <i class="fa-solid fa-user"></i> {{ post.author.username }}
-                <span style="margin: 0 8px;">•</span>
-                <i class="fa-solid fa-calendar"></i> {{ post.date_posted|date:"F j, Y" }}
-            </div>
+      <article class="post-row">
+        <div class="post-main" {% if post.background_image %}style="background-image: url('{{ post.background_image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+          <h3><a href="{% url 'post_detail' post.pk %}" style="color:#111827;text-decoration:none;">{{ post.title }}</a>
+            {% if not post.published and request.user == post.author %}<span style="background:#f3f4f6;padding:2px 6px;border-radius:6px;margin-left:8px;font-size:0.8rem;">Draft</span>{% endif %}
+          </h3>
+          <div class="post-meta">@{{ post.author.username }} • {{ post.date_posted|date:"M d" }}</div>
+          {% if post.image %}
+            <div style="margin:8px 0;"><img src="{{ post.image.url }}" style="width:100%;height:200px;object-fit:cover;border-radius:6px;" /></div>
+          {% endif %}
+          <div class="post-excerpt">{{ post.content|truncatewords:30 }}</div>
+          <div class="post-actions">
+            <a class="action-btn" href="{% url 'post_detail' post.pk %}">Comments ({{ post.comments.count }})</a>
+            <button class="action-btn post-like-btn" data-pk="{{ post.pk }}">{% if user.is_authenticated and user in post.likes.all %}❤️ Like ({{ post.likes.count }}){% else %}🤍 Like ({{ post.likes.count }}){% endif %}</button>
+            <button class="action-btn" onclick="window.location.href='{{ post.get_absolute_url }}'">Share</button>
+            <a class="action-btn" href="{% url 'profile' post.author.username %}">Author</a>
+          </div>
         </div>
-    </div>
+      </article>
     {% empty %}
-    <div class="empty-state">
-        <i class="fa-solid fa-ghost"></i>
-        <p>No posts yet! Be the first to create one.</p>
-    </div>
+      <div style="background:#fff;padding:18px;border-radius:8px;">No posts yet.</div>
     {% endfor %}
+  </main>
+
+  <aside class="right-col">
+    <div class="widget">
+      <a class="create-btn" href="{% url 'post_new' %}">Create Post</a>
+    </div>
+    <div class="widget">
+      <h4 style="margin:0 0 8px 0;">Drafts</h4>
+      <p style="margin:0;font-size:0.9rem;color:#6b7280;">You have {{ draft_count }} drafts</p>
+    </div>
+  </aside>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // CSRF cookie helper
+  function getCookie(name){let c=null;if(document.cookie&&document.cookie!==''){const cs=document.cookie.split(';');for(let i=0;i<cs.length;i++){const ck=cs[i].trim();if(ck.substring(0,name.length+1)===(name+'=')){c=decodeURIComponent(ck.substring(name.length+1));break;}}}return c}
+
+  document.addEventListener('click', async function(e){
+    const btn = e.target.closest && e.target.closest('.post-like-btn');
+    if(!btn) return;
+    const pk = btn.getAttribute('data-pk');
+    const url = `{% url 'post_like_ajax' 0 %}`.replace('/0/', `/${pk}/`);
+    try{
+      const resp = await fetch(url, {method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')}});
+      if(!resp.ok) throw 0;
+      const d = await resp.json();
+      btn.innerText = (d.liked? '❤️ Like ('+d.like_count+')' : '🤍 Like ('+d.like_count+')');
+    }catch(err){console.warn('post-like failed', err)}
+  });
+</script>
 {% endblock %}

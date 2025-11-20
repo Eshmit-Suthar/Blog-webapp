@@ -1,0 +1,16 @@
+{% comment %}Renders a conversation item for the sidebar. Expects `conv` in context (with keys 'partner','last_msg','unread').{% endcomment %}
+<a class="conv-item" href="{% url 'chat' conv.partner.username %}">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="{{ conv.partner.profile.image.url|default:'https://via.placeholder.com/44' }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" />
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <strong>@{{ conv.partner.username }}</strong>
+        {% if conv.unread and conv.unread > 0 %}
+          <span class="unread-badge">{{ conv.unread }}</span>
+        {% endif %}
+      </div>
+      <div class="msg-preview">{{ conv.last_msg.body|truncatewords:10 }}</div>
+    </div>
+    <div class="small-time">{{ conv.last_msg.timestamp|date:"M d" }}</div>
+  </div>
+</a>

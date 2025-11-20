@@ -46,6 +46,12 @@
 
 <div class="inbox-container">
   <h3>📥 Inbox</h3>
+  <div style="margin:8px 0 16px;">
+    <form id="compose-form-inbox" onsubmit="event.preventDefault(); composeToUserInbox();" style="display:flex;gap:8px;">
+      <input id="compose-username-inbox" type="text" placeholder="username to message (e.g. Arshita123)" style="flex:1;padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#FBE4D8;" />
+      <button type="submit" class="btn-follow" style="padding:8px 12px;">New</button>
+    </form>
+  </div>
   <div class="user-list">
     {% for conv in conversations %}
       <a href="{% url 'chat' conv.partner.username %}">
@@ -66,4 +72,13 @@
     {% endfor %}
   </div>
 </div>
+<script>
+  function composeToUserInbox(){
+    const input = document.getElementById('compose-username-inbox');
+    const v = input.value.trim();
+    if(!v){ alert('Enter a username to message.'); return; }
+    const url = '/chat/' + encodeURIComponent(v) + '/';
+    window.location.href = url;
+  }
+</script>
 {% endblock %}
